@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections;
-using System.Runtime.CompilerServices;
 using ActiveStruts.Addons;
 using ActiveStruts.Util;
 using CIT_Util;
@@ -12,61 +11,63 @@ namespace ActiveStruts.Modules
 {
     public class ModuleKerbalHook : PartModule
     {
-        private const string ThrowHookLabel = "ThrowHook";
-        private const string ReleaseHookLabel = "ReleaseHook";
-        private const string PullCloserLabel = "PullCloser";
-        private const string IncreaseCableLengthLabel = "IncreaseCableLength";
-        private const float WinchStepWidth = 0.5f;
-        private const float MinTetherLength = 0.5f;
-        private readonly object _jointLock = new object();
+        private const string THROW_HOOK_LABEL = "ThrowHook";
+        private const string RELEASE_HOOK_LABEL = "ReleaseHook";
+        private const string PULL_CLOSER_LABEL = "PullCloser";
+        private const string INCREASE_CABLE_LENGTH_LABEL = "IncreaseCableLength";
+        private const float WINCH_STEP_WIDTH = 0.5f;
+        private const float MIN_TETHER_LENGTH = 0.5f;
+        private readonly object jointLock = new object();
         [KSPField(guiName = "Tether Length", guiActive = true, guiFormat = "F1")] public float MaxDistance;
         internal ModuleActiveStrutFreeAttachTarget Target;
-        private SpringJoint _joint;
-        private GameObject _localAnchor;
-        private FixedJoint _localAnchorJoint;
-        private GameObject _strut;
-        private bool _strutActive;
+        private ModuleKerbalHookAnchor hookAnchor;
+        private SpringJoint joint;
+        private GameObject localAnchor;
+        private FixedJoint localAnchorJoint;
+        private GameObject strut;
+        private bool strutActive;
 
         public void Abort()
         {
-            lock (this._jointLock)
+            lock (jointLock)
             {
-                if (this._joint != null)
+                if (joint != null)
                 {
-                    DestroyImmediate(this._joint);
+                    DestroyImmediate(joint);
                 }
             }
-            if (this._hookAnchor != null)
+            if (hookAnchor != null)
             {
-                this.ReleaseHookAnchor();
+                ReleaseHookAnchor();
                 return;
             }
-            if (this.Target != null)
+            if (Target != null)
             {
-                this.Target.Die();
+                Target.Die();
             }
-            this.Target = null;
-            if (this._localAnchor != null)
+            Target = null;
+            if (localAnchor != null)
             {
-                if (this._localAnchorJoint != null)
+                if (localAnchorJoint != null)
                 {
-                    DestroyImmediate(this._localAnchorJoint);
+                    DestroyImmediate(localAnchorJoint);
                 }
-                Destroy(this._localAnchor);
+                Destroy(localAnchor);
             }
         }
 
         internal void Die()
         {
-            this.Abort();
+            Abort();
         }
 
-        [KSPEvent(name = IncreaseCableLengthLabel, active = false, guiActive = true, guiName = "Increase tether length", guiActiveEditor = false, guiActiveUnfocused = false)]
+        [KSPEvent(name = INCREASE_CABLE_LENGTH_LABEL, active = false, guiActive = true, guiName = "Increase tether length",
+            guiActiveEditor = false, guiActiveUnfocused = false)]
         public void IncreaseCableLength()
         {
-            if (this.MaxDistance + WinchStepWidth < Config.Instance.MaxDistance)
+            if (MaxDistance + WINCH_STEP_WIDTH < Config.Instance.MaxDistance)
             {
-                this.MaxDistance += WinchStepWidth;
+                MaxDistance += WINCH_STEP_WIDTH;
             }
             else
             {
@@ -76,33 +77,33 @@ namespace ActiveStruts.Modules
 
         public override void OnUpdate()
         {
-            if (!HighLogic.LoadedSceneIsFlight || (this.Target == null && this._hookAnchor == null))
+            if (!HighLogic.LoadedSceneIsFlight || (Target == null && hookAnchor == null))
             {
                 if (HighLogic.LoadedSceneIsFlight)
                 {
-                    this._updateGui();
+                    _updateGui();
                 }
-                if (this._strutActive && this._strut != null)
+                if (strutActive && strut != null)
                 {
-                    this._strut.SetActive(false);
+                    strut.SetActive(false);
                 }
                 return;
             }
-            if (this.Target != null && this._joint == null && this._localAnchor != null)
+            if (Target != null && joint == null && localAnchor != null)
             {
-                this._localAnchor.transform.position = this.Target.part.transform.position;
+                localAnchor.transform.position = Target.part.transform.position;
             }
-            if (this._joint != null)
+            if (joint != null)
             {
-                this._realignStrut();
-                this._joint.maxDistance = this.MaxDistance;
+                _realignStrut();
+                joint.maxDistance = MaxDistance;
             }
-            this._updateGui();
+            _updateGui();
         }
 
         public override void OnStart(StartState state)
         {
-            this.part.force_activate();
+            part.force_activate();
         }
 
         public void PlaceHook(Part newSpawnedPart)
@@ -115,15 +116,16 @@ namespace ActiveStruts.Modules
                 ActiveStrutsAddon.NewSpawnedPart = newSpawnedPart;
                 return;
             }
-            this.MaxDistance = -1f;
-            this.Target = module;
-            this._createLocalAnchor();
-            this.StartCoroutine(this.WaitAndCreateJoint());
+            MaxDistance = -1f;
+            Target = module;
+            _createLocalAnchor();
+            StartCoroutine(WaitAndCreateJoint());
         }
 
         private IEnumerator PreparePartForFreeAttach()
         {
-            var newPart = PartFactory.SpawnPartInFlight("TetherHook", this.part, new Vector3(2, 2, 2), this.part.transform.rotation);
+            var newPart = PartFactory.SpawnPartInFlight("TetherHook", part, new Vector3(2, 2, 2),
+                part.transform.rotation);
             OSD.PostMessageLowerRightCorner("waiting for Unity to catch up...", 1.5f);
             while (!newPart.rigidbody)
             {
@@ -138,7 +140,7 @@ namespace ActiveStruts.Modules
                 }
                 try
                 {
-                    newPart.transform.position = this.part.transform.position;
+                    newPart.transform.position = part.transform.position;
                 }
                 catch (NullReferenceException)
                 {
@@ -164,12 +166,13 @@ namespace ActiveStruts.Modules
             ActiveStrutsAddon.Mode = AddonMode.AttachKerbalHook;
         }
 
-        [KSPEvent(name = PullCloserLabel, active = false, guiActive = true, guiName = "Pull closer", guiActiveEditor = false, guiActiveUnfocused = false)]
+        [KSPEvent(name = PULL_CLOSER_LABEL, active = false, guiActive = true, guiName = "Pull closer",
+            guiActiveEditor = false, guiActiveUnfocused = false)]
         public void PullCloser()
         {
-            if (this.MaxDistance - WinchStepWidth > MinTetherLength)
+            if (MaxDistance - WINCH_STEP_WIDTH > MIN_TETHER_LENGTH)
             {
-                this.MaxDistance -= WinchStepWidth;
+                MaxDistance -= WINCH_STEP_WIDTH;
             }
             else
             {
@@ -177,20 +180,22 @@ namespace ActiveStruts.Modules
             }
         }
 
-        [KSPEvent(name = ReleaseHookLabel, active = false, guiActive = true, guiName = "Release EVA Hook", guiActiveEditor = false, guiActiveUnfocused = false)]
+        [KSPEvent(name = RELEASE_HOOK_LABEL, active = false, guiActive = true, guiName = "Release EVA Hook",
+            guiActiveEditor = false, guiActiveUnfocused = false)]
         public void ReleaseHook()
         {
-            this.Abort();
+            Abort();
         }
 
-        [KSPEvent(name = ThrowHookLabel, active = false, guiActive = true, guiName = "Throw Tether Hook", guiActiveEditor = false, guiActiveUnfocused = false)]
+        [KSPEvent(name = THROW_HOOK_LABEL, active = false, guiActive = true, guiName = "Throw Tether Hook",
+            guiActiveEditor = false, guiActiveUnfocused = false)]
         public void ThrowHook()
         {
             if (Config.Instance.ShowHelpTexts)
             {
                 OSD.PostMessage(Config.Instance.FreeAttachHelpText, 5);
             }
-            this.StartCoroutine(this.PreparePartForFreeAttach());
+            StartCoroutine(PreparePartForFreeAttach());
         }
 
         private IEnumerator WaitAndCreateJoint()
@@ -198,53 +203,53 @@ namespace ActiveStruts.Modules
             yield return new WaitForSeconds(0.1f);
             yield return new WaitForFixedUpdate();
             var conf = Config.Instance;
-            this._localAnchor.transform.position = this.Target.part.transform.position;
-            this.MaxDistance = Vector3.Distance(this.part.transform.position, this.Target.transform.position);
-            this._joint = this._localAnchor.AddComponent<SpringJoint>();
-            this._joint.spring = conf.KerbalTetherSpringForce;
-            this._joint.damper = conf.KerbalTetherDamper;
-            this._joint.anchor = this.Target.part.transform.position;
-            this._joint.connectedBody = this.Target.part.parent.rigidbody;
-            this._joint.maxDistance = this.MaxDistance + 0.25f;
-            this._joint.breakForce = Mathf.Infinity;
-            this._joint.breakTorque = Mathf.Infinity;
+            localAnchor.transform.position = Target.part.transform.position;
+            MaxDistance = Vector3.Distance(part.transform.position, Target.transform.position);
+            joint = localAnchor.AddComponent<SpringJoint>();
+            joint.spring = conf.KerbalTetherSpringForce;
+            joint.damper = conf.KerbalTetherDamper;
+            joint.anchor = Target.part.transform.position;
+            joint.connectedBody = Target.part.parent.rigidbody;
+            joint.maxDistance = MaxDistance + 0.25f;
+            joint.breakForce = Mathf.Infinity;
+            joint.breakTorque = Mathf.Infinity;
             yield return new WaitForSeconds(0.1f);
             yield return new WaitForFixedUpdate();
-            this._localAnchor.transform.position = this.part.transform.position;
-            this._localAnchorJoint = this._localAnchor.AddComponent<FixedJoint>();
-            this._localAnchorJoint.connectedBody = this.part.rigidbody;
-            this._localAnchorJoint.breakForce = this._localAnchorJoint.breakTorque = Mathf.Infinity;
+            localAnchor.transform.position = part.transform.position;
+            localAnchorJoint = localAnchor.AddComponent<FixedJoint>();
+            localAnchorJoint.connectedBody = part.rigidbody;
+            localAnchorJoint.breakForce = localAnchorJoint.breakTorque = Mathf.Infinity;
         }
 
         private void _createJointNow()
         {
-            if (this._hookAnchor == null)
+            if (hookAnchor == null)
             {
-                this.ReleaseHook();
+                ReleaseHook();
                 return;
             }
             var conf = Config.Instance;
-            var tPos = this._hookAnchor.part.transform.position;
-            this.MaxDistance = Vector3.Distance(this.part.transform.position, tPos);
-            this._joint = this.part.gameObject.AddComponent<SpringJoint>();
-            this._joint.spring = conf.KerbalTetherSpringForce;
-            this._joint.damper = conf.KerbalTetherDamper;
-            this._joint.anchor = tPos;
-            this._joint.connectedBody = this._hookAnchor.part.rigidbody;
-            this._joint.maxDistance = this.MaxDistance + 0.25f;
-            this._joint.breakForce = Mathf.Infinity;
-            this._joint.breakTorque = Mathf.Infinity;
+            var tPos = hookAnchor.part.transform.position;
+            MaxDistance = Vector3.Distance(part.transform.position, tPos);
+            joint = part.gameObject.AddComponent<SpringJoint>();
+            joint.spring = conf.KerbalTetherSpringForce;
+            joint.damper = conf.KerbalTetherDamper;
+            joint.anchor = tPos;
+            joint.connectedBody = hookAnchor.part.rigidbody;
+            joint.maxDistance = MaxDistance + 0.25f;
+            joint.breakForce = Mathf.Infinity;
+            joint.breakTorque = Mathf.Infinity;
         }
 
         private void _createLocalAnchor()
         {
-            this._localAnchor = Utilities.CreateLocalAnchor("KerbalHookLocalAnchor", true);
+            localAnchor = Utilities.CreateLocalAnchor("KerbalHookLocalAnchor", true);
         }
 
         private void _createStrut()
         {
             //Color = 255, 209, 25
-            this._strut = Utilities.CreateFlexStrut("KerbalHookStrut", true, new Color(1f, 0.81961f, 0.09804f));
+            strut = Utilities.CreateFlexStrut("KerbalHookStrut", true, new Color(1f, 0.81961f, 0.09804f));
         }
 
         private static ModuleActiveStrutFreeAttachTarget _getModuleFromPart(Part spPart)
@@ -253,24 +258,25 @@ namespace ActiveStruts.Modules
             {
                 return null;
             }
-            var module = spPart.Modules[Config.Instance.ModuleActiveStrutFreeAttachTarget] as ModuleActiveStrutFreeAttachTarget;
+            var module =
+                spPart.Modules[Config.Instance.ModuleActiveStrutFreeAttachTarget] as ModuleActiveStrutFreeAttachTarget;
             return module;
         }
 
         private void _realignStrut()
         {
-            if (this._strut != null)
+            if (strut != null)
             {
-                var target = this.Target == null
-                                 ? this._hookAnchor != null
-                                       ? this._hookAnchor.part.FindModuleImplementing<ModuleActiveStrutFreeAttachTarget>()
-                                       : null
-                                 : null;
+                var target = Target == null
+                    ? hookAnchor != null
+                        ? hookAnchor.part.FindModuleImplementing<ModuleActiveStrutFreeAttachTarget>()
+                        : null
+                    : null;
                 if (target != null)
                 {
-                    this._strut.SetActive(false);
-                    var trans = this._strut.transform;
-                    trans.position = this.part.transform.position;
+                    strut.SetActive(false);
+                    var trans = strut.transform;
+                    trans.position = part.transform.position;
                     trans.LookAt(target.OffsetPosition);
                     trans.localScale = new Vector3(trans.position.x, trans.position.y, 1);
                     var dist = (Vector3.Distance(Vector3.zero, trans.InverseTransformPoint(target.OffsetPosition))/2.0f);
@@ -278,29 +284,29 @@ namespace ActiveStruts.Modules
                     trans.Rotate(new Vector3(0, 0, 1), 90f);
                     trans.Rotate(new Vector3(1, 0, 0), 90f);
                     trans.Translate(new Vector3(0f, dist, 0f));
-                    this._strut.SetActive(true);
-                    this._strutActive = true;
+                    strut.SetActive(true);
+                    strutActive = true;
                 }
                 else
                 {
-                    this._strut.SetActive(false);
-                    this._strutActive = false;
+                    strut.SetActive(false);
+                    strutActive = false;
                 }
             }
             else
             {
-                this._createStrut();
+                _createStrut();
             }
         }
 
         private void _updateGui()
         {
-            var hookEvent = this.Events[ThrowHookLabel];
-            var releaseEvent = this.Events[ReleaseHookLabel];
-            var pullEvent = this.Events[PullCloserLabel];
-            var increaseLengthEvent = this.Events[IncreaseCableLengthLabel];
-            var lengthField = this.Fields["MaxDistance"];
-            if (this.Target == null && this._hookAnchor == null)
+            var hookEvent = Events[THROW_HOOK_LABEL];
+            var releaseEvent = Events[RELEASE_HOOK_LABEL];
+            var pullEvent = Events[PULL_CLOSER_LABEL];
+            var increaseLengthEvent = Events[INCREASE_CABLE_LENGTH_LABEL];
+            var lengthField = Fields["MaxDistance"];
+            if (Target == null && hookAnchor == null)
             {
                 if (Config.Instance.EnableFreeAttachKerbalTether)
                 {
@@ -321,28 +327,26 @@ namespace ActiveStruts.Modules
             }
         }
 
-        private ModuleKerbalHookAnchor _hookAnchor;
-
         internal void SetHookAnchor(ModuleKerbalHookAnchor anchor)
         {
-            this._hookAnchor = anchor;
-            if (this._hookAnchor != null)
+            hookAnchor = anchor;
+            if (hookAnchor != null)
             {
-                this._hookAnchor.IsConnected = true;
-                this._hookAnchor.KerbalHook = this;
-                this._createJointNow();
+                hookAnchor.IsConnected = true;
+                hookAnchor.KerbalHook = this;
+                _createJointNow();
             }
         }
 
         internal void ReleaseHookAnchor()
         {
-            if (this._hookAnchor != null)
+            if (hookAnchor != null)
             {
-                this._hookAnchor.IsConnected = false;
-                this._hookAnchor.KerbalHook = null;
+                hookAnchor.IsConnected = false;
+                hookAnchor.KerbalHook = null;
             }
-            this._hookAnchor = null;
-            this.Abort();
+            hookAnchor = null;
+            Abort();
         }
     }
 }

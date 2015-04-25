@@ -6,55 +6,59 @@ namespace ActiveStruts.Modules
 {
     public class ModuleAutoStrutter : PartModule
     {
-        private const byte WaitInterval = 30;
+        private const byte WAIT_INTERVAL = 30;
         [KSPField(isPersistant = true)] public bool Enabled = true;
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Group")] public int Group = 0;
-        private bool _connected;
-        private Transform _head;
-        private bool _isOrigin;
-        private FixedJoint _joint;
-        private Transform[] _lights;
-        private Transform _mount;
-        private ModuleAutoStrutter _partner;
-        private GameObject _strut;
-        private byte _wait;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Group")] public int Group =
+            0;
+
+        private bool connected;
+        private Transform head;
+        private bool isOrigin;
+        private FixedJoint joint;
+        private Transform[] lights;
+        private Transform mount;
+        private ModuleAutoStrutter partner;
+        private GameObject strut;
+        private byte wait;
 
         private Transform HeadTransform
         {
-            get { return this._head != null ? this._head.transform : this.part.transform; }
+            get { return head != null ? head.transform : part.transform; }
         }
 
         private Transform MountTransform
         {
-            get { return this._mount != null ? this._mount.transform : this.part.transform; }
+            get { return mount != null ? mount.transform : part.transform; }
         }
 
-        [KSPEvent(active = true, guiActive = true, guiActiveEditor = true, unfocusedRange = 15f, externalToEVAOnly = false, guiName = "Group -")]
+        [KSPEvent(active = true, guiActive = true, guiActiveEditor = true, unfocusedRange = 15f,
+            externalToEVAOnly = false, guiName = "Group -")]
         public void DecreaseGroup()
         {
-            if (this.Group > 0)
+            if (Group > 0)
             {
-                this.Group--;
+                Group--;
             }
         }
 
         [KSPAction("DecreaseGroupAction", KSPActionGroup.None, guiName = "Group -")]
         public void DecreaseGroupAction(KSPActionParam param)
         {
-            this.DecreaseGroup();
+            DecreaseGroup();
         }
 
         [KSPEvent(guiName = "Disable", name = "Disable", unfocusedRange = 15f, externalToEVAOnly = false)]
         public void Disable()
         {
-            this.Enabled = false;
-            this._unlink();
+            Enabled = false;
+            Unlink();
         }
 
         [KSPEvent(guiName = "Enable", name = "Enable", unfocusedRange = 15f, externalToEVAOnly = false)]
         public void Enable()
         {
-            this.Enabled = true;
+            Enabled = true;
         }
 
         public void FixedUpdate()
@@ -63,217 +67,227 @@ namespace ActiveStruts.Modules
             {
                 return;
             }
-            if (this._connected)
+            if (connected)
             {
-                if (!this.Enabled
-                    || this._partner == null
-                    || !this._partner.Enabled
-                    || this._partner.vessel == null
-                    || this.vessel == null
-                    || this._partner.vessel != this.vessel
-                    || !this._checkGroup(this._partner))
+                if (!Enabled
+                    || partner == null
+                    || !partner.Enabled
+                    || partner.vessel == null
+                    || vessel == null
+                    || partner.vessel != vessel
+                    || !CheckGroup(partner))
                 {
-                    this._unlink();
+                    Unlink();
                     return;
                 }
-                this._orientHeadTransformToTarget();
-                this._orientMountTransformToTarget();
-                if (this._joint == null)
+                OrientHeadTransformToTarget();
+                OrientMountTransformToTarget();
+                if (joint == null)
                 {
-                    this._createJoint();
+                    CreateJoint();
                 }
             }
-            if (this._isOrigin)
+            if (isOrigin)
             {
-                this._alignStrut();
+                AlignStrut();
             }
-            if (this._wait > 0)
+            if (wait > 0)
             {
-                this._wait--;
+                wait--;
                 return;
             }
-            this._wait = WaitInterval;
-            this._updateGui();
-            this._updateLights();
-            if (!this._connected && this.Enabled)
+            wait = WAIT_INTERVAL;
+            UpdateGui();
+            UpdateLights();
+            if (!connected && Enabled)
             {
-                var nearestStrutter = this._findNearestAutoStrutterOnVessel();
+                var nearestStrutter = FindNearestAutoStrutterOnVessel();
                 if (nearestStrutter != null)
                 {
-                    this._connected = true;
-                    nearestStrutter._connected = true;
-                    this._partner = nearestStrutter;
-                    nearestStrutter._partner = this;
-                    this._isOrigin = true;
-                    nearestStrutter._isOrigin = false;
-                    this._createJoint();
+                    connected = true;
+                    nearestStrutter.connected = true;
+                    partner = nearestStrutter;
+                    nearestStrutter.partner = this;
+                    isOrigin = true;
+                    nearestStrutter.isOrigin = false;
+                    CreateJoint();
                 }
             }
         }
 
         [KSPAction("Group +")]
-        [KSPEvent(active = true, guiActive = true, guiActiveEditor = true, unfocusedRange = 15f, externalToEVAOnly = false, guiName = "Group +")]
+        [KSPEvent(active = true, guiActive = true, guiActiveEditor = true, unfocusedRange = 15f,
+            externalToEVAOnly = false, guiName = "Group +")]
         public void IncreaseGroup()
         {
-            if (this.Group < int.MaxValue)
+            if (Group < int.MaxValue)
             {
-                this.Group++;
+                Group++;
             }
         }
 
         [KSPAction("IncreaseGroupAction", KSPActionGroup.None, guiName = "Group +")]
         public void IncreaseGroupAction(KSPActionParam param)
         {
-            this.IncreaseGroup();
+            IncreaseGroup();
         }
 
         public void Start()
         {
-            this._wait = WaitInterval;
-            this._head = this.part.FindModelTransform("Head");
-            this._mount = this.part.FindModelTransform("Mount");
-            this._lights = new[]
-                           {
-                               this.part.FindModelTransform("Light1"), this.part.FindModelTransform("Light2"), this.part.FindModelTransform("SmoothLight1_1"), this.part.FindModelTransform("SmoothLight1_2"),
-                               this.part.FindModelTransform("SmoothLight2_1"), this.part.FindModelTransform("SmoothLight2_2")
-                           };
-            this._connected = false;
+            wait = WAIT_INTERVAL;
+            head = part.FindModelTransform("Head");
+            mount = part.FindModelTransform("Mount");
+            lights = new[]
+            {
+                part.FindModelTransform("Light1"), part.FindModelTransform("Light2"),
+                part.FindModelTransform("SmoothLight1_1"), part.FindModelTransform("SmoothLight1_2"),
+                part.FindModelTransform("SmoothLight2_1"), part.FindModelTransform("SmoothLight2_2")
+            };
+            connected = false;
             if (HighLogic.LoadedSceneIsFlight)
             {
-                this._strut = Utilities.CreateSimpleStrut("Autostrutterstrut");
+                strut = Utilities.CreateSimpleStrut("Autostrutterstrut");
             }
         }
 
         [KSPAction("ToggleEnabledAction", KSPActionGroup.None, guiName = "Toggle Enabled")]
         public void ToggleEnabledAction(KSPActionParam param)
         {
-            if (this.Enabled)
+            if (Enabled)
             {
-                this.Disable();
+                Disable();
             }
             else
             {
-                this.Enable();
+                Enable();
             }
         }
 
-        private void _alignStrut()
+        private void AlignStrut()
         {
-            if (this._partner != null && this._strut != null)
+            if (partner != null && strut != null)
             {
-                this._strut.SetActive(false);
-                var dist = Vector3.Distance(Vector3.zero, this.HeadTransform.InverseTransformPoint(this._partner.HeadTransform.position))/2f;
-                var trans = this._strut.transform;
-                trans.position = this.HeadTransform.position;
-                trans.LookAt(this._partner.HeadTransform.position);
+                strut.SetActive(false);
+                var dist =
+                    Vector3.Distance(Vector3.zero, HeadTransform.InverseTransformPoint(partner.HeadTransform.position))/
+                    2f;
+                var trans = strut.transform;
+                trans.position = HeadTransform.position;
+                trans.LookAt(partner.HeadTransform.position);
                 trans.localScale = new Vector3(trans.position.x, trans.position.y, 1);
                 trans.localScale = new Vector3(0.025f, dist, 0.025f);
                 trans.Rotate(new Vector3(0, 0, 1), 90f);
                 trans.Rotate(new Vector3(1, 0, 0), 90f);
                 trans.Translate(new Vector3(0f, 1f, 0f)*dist);
-                this._strut.SetActive(true);
+                strut.SetActive(true);
             }
         }
 
-        private bool _checkGroup(ModuleAutoStrutter possibleTarget)
+        private bool CheckGroup(ModuleAutoStrutter possibleTarget)
         {
             if (Config.Instance.AutoStrutterConnectToOwnGroup)
             {
-                return this.Group == possibleTarget.Group;
+                return Group == possibleTarget.Group;
             }
-            return this.Group != possibleTarget.Group;
+            return Group != possibleTarget.Group;
         }
 
         private bool _checkLineOfSight(ModuleAutoStrutter target)
         {
-            var rayres = Utilities.PerformRaycast(this.HeadTransform.position, target.HeadTransform.position, this.part.transform.up, this.part);
-            return rayres.HitResult && rayres.HittedPart != null && rayres.HittedPart == target.part && rayres.RayAngle <= Config.Instance.MaxAngleAutostrutter;
+            var rayres = Utilities.PerformRaycast(HeadTransform.position, target.HeadTransform.position,
+                part.transform.up, part);
+            return rayres.HitResult && rayres.HittedPart != null && rayres.HittedPart == target.part &&
+                   rayres.RayAngle <= Config.Instance.MaxAngleAutostrutter;
         }
 
-        private void _createJoint()
+        private void CreateJoint()
         {
-            if (this._partner == null || this._partner.rigidbody == null)
+            if (partner == null || partner.rigidbody == null)
             {
                 return;
             }
-            this._joint = this.part.gameObject.AddComponent<FixedJoint>();
-            this._joint.breakForce = this._joint.breakTorque = Mathf.Infinity;
-            this._joint.connectedBody = this._partner.rigidbody;
+            joint = part.gameObject.AddComponent<FixedJoint>();
+            joint.breakForce = joint.breakTorque = Mathf.Infinity;
+            joint.connectedBody = partner.rigidbody;
         }
 
-        private ModuleAutoStrutter _findNearestAutoStrutterOnVessel()
+        private ModuleAutoStrutter FindNearestAutoStrutterOnVessel()
         {
-            return (from p in this.part.vessel.Parts
-                    let mod = p.FindModuleImplementing<ModuleAutoStrutter>()
-                    where mod != null && mod.Enabled && !mod._connected
-                    where this._checkGroup(mod)
-                          && mod.part.parent != null
-                          && this.part.parent != null
-                          && this.part.parent != mod.part.parent
-                    where this._checkLineOfSight(mod)
-                    orderby Vector3.Distance(mod.HeadTransform.position, this.HeadTransform.position)
-                    select mod).FirstOrDefault();
+            return (from p in part.vessel.Parts
+                let mod = p.FindModuleImplementing<ModuleAutoStrutter>()
+                where mod != null && mod.Enabled && !mod.connected
+                where CheckGroup(mod)
+                      && mod.part.parent != null
+                      && part.parent != null
+                      && part.parent != mod.part.parent
+                where _checkLineOfSight(mod)
+                orderby Vector3.Distance(mod.HeadTransform.position, HeadTransform.position)
+                select mod).FirstOrDefault();
         }
 
-        private void _orientHeadTransformToTarget()
+        private void OrientHeadTransformToTarget()
         {
-            this.HeadTransform.LookAt(this._partner.HeadTransform.position);
+            HeadTransform.LookAt(partner.HeadTransform.position);
         }
 
-        private void _orientMountTransformToTarget()
+        private void OrientMountTransformToTarget()
         {
-            var angle = RotationAngleHelper.GetYRotationAngleToLookAtTarget(this.MountTransform, this._partner.MountTransform);
-            this.MountTransform.Rotate(new Vector3(0f, 1f, 0f), angle + 90f);
+            var angle = RotationAngleHelper.GetYRotationAngleToLookAtTarget(MountTransform, partner.MountTransform);
+            MountTransform.Rotate(new Vector3(0f, 1f, 0f), angle + 90f);
         }
 
-        private void _unlink()
+        private void Unlink()
         {
-            if (this._joint != null)
+            if (joint != null)
             {
-                Destroy(this._joint);
+                Destroy(joint);
             }
-            this._strut.transform.localScale = Vector3.zero;
-            this._strut.SetActive(false);
-            if (this._partner != null && this._isOrigin)
+            strut.transform.localScale = Vector3.zero;
+            strut.SetActive(false);
+            if (partner != null && isOrigin)
             {
-                this._partner._unlink();
+                partner.Unlink();
             }
-            this._partner = null;
-            this._connected = this._isOrigin = false;
+            partner = null;
+            connected = isOrigin = false;
         }
 
-        private void _updateGui()
+        private void UpdateGui()
         {
-            var disableEvent = this.Events["Disable"];
-            var enableEvent = this.Events["Enable"];
-            if (this.Enabled)
+            var disableEvent = Events["Disable"];
+            var enableEvent = Events["Enable"];
+            if (Enabled)
             {
-                disableEvent.active = disableEvent.guiActive = disableEvent.guiActiveEditor = disableEvent.guiActiveUnfocused = true;
-                enableEvent.active = enableEvent.guiActive = enableEvent.guiActiveEditor = enableEvent.guiActiveUnfocused = false;
+                disableEvent.active =
+                    disableEvent.guiActive = disableEvent.guiActiveEditor = disableEvent.guiActiveUnfocused = true;
+                enableEvent.active =
+                    enableEvent.guiActive = enableEvent.guiActiveEditor = enableEvent.guiActiveUnfocused = false;
             }
             else
             {
-                disableEvent.active = disableEvent.guiActive = disableEvent.guiActiveEditor = disableEvent.guiActiveUnfocused = false;
-                enableEvent.active = enableEvent.guiActive = enableEvent.guiActiveEditor = enableEvent.guiActiveUnfocused = true;
+                disableEvent.active =
+                    disableEvent.guiActive = disableEvent.guiActiveEditor = disableEvent.guiActiveUnfocused = false;
+                enableEvent.active =
+                    enableEvent.guiActive = enableEvent.guiActiveEditor = enableEvent.guiActiveUnfocused = true;
             }
         }
 
-        private void _updateLights()
+        private void UpdateLights()
         {
             var col = Color.white;
-            if (this._connected)
+            if (connected)
             {
-                col = Utilities._setColorForEmissive(Color.green);
+                col = Utilities.SetColorForEmissive(Color.green);
             }
-            else if (!this._connected && this.Enabled)
+            else if (!connected && Enabled)
             {
-                col = Utilities._setColorForEmissive(new Color(1f, 0.6f, 0f));
+                col = Utilities.SetColorForEmissive(new Color(1f, 0.6f, 0f));
             }
-            else if (!this.Enabled)
+            else if (!Enabled)
             {
-                col = Utilities._setColorForEmissive(Color.red);
+                col = Utilities.SetColorForEmissive(Color.red);
             }
-            foreach (var l in this._lights)
+            foreach (var l in lights)
             {
                 l.renderer.material.color = col;
                 l.renderer.material.SetColor("_Emissive", col);

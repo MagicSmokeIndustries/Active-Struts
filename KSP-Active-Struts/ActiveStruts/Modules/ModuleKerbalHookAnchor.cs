@@ -1,22 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using ActiveStruts.Util;
+﻿using ActiveStruts.Util;
 
 namespace ActiveStruts.Modules
 {
     public class ModuleKerbalHookAnchor : PartModule
     {
-        private const string AttachTetherLabel = "AttachTether";
-        private const string ReleaseTetherLabel = "ReleaseTether";
+        private const string ATTACH_TETHER_LABEL = "AttachTether";
+        private const string RELEASE_TETHER_LABEL = "ReleaseTether";
         internal bool IsConnected = false;
         internal ModuleKerbalHook KerbalHook = null;
 
         public void Update()
         {
-            var ate = this.Events[AttachTetherLabel];
-            var rte = this.Events[ReleaseTetherLabel];
+            var ate = Events[ATTACH_TETHER_LABEL];
+            var rte = Events[RELEASE_TETHER_LABEL];
             if (HighLogic.LoadedSceneIsFlight
                 && ate != null
                 && rte != null
@@ -24,7 +20,7 @@ namespace ActiveStruts.Modules
                 && FlightGlobals.ActiveVessel.isEVA
                 && !Config.Instance.EnableFreeAttachKerbalTether)
             {
-                if (this.IsConnected)
+                if (IsConnected)
                 {
                     rte.active = rte.guiActive = rte.guiActiveUnfocused = true;
                     ate.active = ate.guiActive = ate.guiActiveUnfocused = false;
@@ -43,10 +39,11 @@ namespace ActiveStruts.Modules
             }
         }
 
-        [KSPEvent(name = AttachTetherLabel, active = false, guiActive = true, guiName = "Attach Tether", guiActiveEditor = false, guiActiveUnfocused = true)]
+        [KSPEvent(name = ATTACH_TETHER_LABEL, active = false, guiActive = true, guiName = "Attach Tether",
+            guiActiveEditor = false, guiActiveUnfocused = true)]
         public void AttachTether()
         {
-            if (this.IsConnected)
+            if (IsConnected)
             {
                 return;
             }
@@ -63,16 +60,17 @@ namespace ActiveStruts.Modules
             module.SetHookAnchor(this);
         }
 
-        [KSPEvent(name = ReleaseTetherLabel, active = false, guiActive = true, guiName = "Release Tether", guiActiveEditor = false, guiActiveUnfocused = true)]
+        [KSPEvent(name = RELEASE_TETHER_LABEL, active = false, guiActive = true, guiName = "Release Tether",
+            guiActiveEditor = false, guiActiveUnfocused = true)]
         public void ReleaseTether()
         {
-            if (this.KerbalHook != null)
+            if (KerbalHook != null)
             {
-                this.KerbalHook.ReleaseHookAnchor();
+                KerbalHook.ReleaseHookAnchor();
             }
             else
             {
-                this.IsConnected = false;
+                IsConnected = false;
             }
         }
     }

@@ -8,7 +8,7 @@ namespace ActiveStruts.Modules
 {
     public class ModuleActiveStrutFreeAttachTarget : PartModule, IDResetable
     {
-        private const float InFlightScale = 0.01f; //default = 0.01f, debug = 0.1f
+        private const float IN_FLIGHT_SCALE = 0.01f; //default = 0.01f, debug = 0.1f
         [KSPField(isPersistant = true)] public bool CreatedInEditor = false;
         [KSPField(isPersistant = true)] public string Id = Guid.Empty.ToString();
         [KSPField(isPersistant = true)] public bool IdResetDone = false;
@@ -19,61 +19,61 @@ namespace ActiveStruts.Modules
         {
             get
             {
-                var guid = new Guid(this.Id);
+                var guid = new Guid(Id);
                 if (guid != Guid.Empty)
                 {
                     return guid;
                 }
                 guid = Guid.NewGuid();
-                this.Id = guid.ToString();
+                Id = guid.ToString();
                 return guid;
             }
-            set { this.Id = value.ToString(); }
+            set { Id = value.ToString(); }
         }
 
         public Vector3 OffsetPosition
         {
-            get { return this.PartOrigin.position + (this.PartOrigin.up*this.TetherOffset); }
+            get { return PartOrigin.position + (PartOrigin.up*TetherOffset); }
         }
 
         public Transform PartOrigin
         {
-            get { return this.part.transform; }
+            get { return part.transform; }
         }
 
         public Rigidbody PartRigidbody
         {
-            get { return this.part.rigidbody; }
+            get { return part.rigidbody; }
         }
 
         public ModuleActiveStrut Targeter { get; set; }
 
         public void ResetId()
         {
-            var oldId = this.Id;
-            this.Id = Guid.NewGuid().ToString();
+            var oldId = Id;
+            Id = Guid.NewGuid().ToString();
             foreach (var moduleActiveStrut in Utilities.GetAllActiveStruts().Where(m => m.FreeAttachTargetId != null))
             {
                 if (moduleActiveStrut.FreeAttachTargetId == oldId)
                 {
-                    moduleActiveStrut.FreeAttachTargetId = this.Id;
+                    moduleActiveStrut.FreeAttachTargetId = Id;
                 }
             }
-            this.IdResetDone = true;
+            IdResetDone = true;
         }
 
         internal bool CreateJointToParent(Part parent)
         {
-            this.part.attachMode = AttachModes.SRF_ATTACH;
-            this.part.srfAttachNode.attachedPart = parent;
-            this.part.srfAttachNode.breakingForce = Mathf.Infinity;
-            this.part.srfAttachNode.breakingTorque = Mathf.Infinity;
-            this.part.srfAttachNode.ResourceXFeed = true;
-            this.part.srfAttachNode.position = this.part.srfAttachNode.originalPosition = this.part.transform.position;
+            part.attachMode = AttachModes.SRF_ATTACH;
+            part.srfAttachNode.attachedPart = parent;
+            part.srfAttachNode.breakingForce = Mathf.Infinity;
+            part.srfAttachNode.breakingTorque = Mathf.Infinity;
+            part.srfAttachNode.ResourceXFeed = true;
+            part.srfAttachNode.position = part.srfAttachNode.originalPosition = part.transform.position;
 
-            this.part.Couple(parent);
+            part.Couple(parent);
 
-            this.part.SendMessage("OnAttach", SendMessageOptions.DontRequireReceiver);
+            part.SendMessage("OnAttach", SendMessageOptions.DontRequireReceiver);
             Debug.Log("[AS] spawned part attached to its parent.");
             return true;
         }
@@ -83,43 +83,43 @@ namespace ActiveStruts.Modules
             Debug.Log("[AS] targetpart tries to die");
             if (HighLogic.LoadedSceneIsFlight)
             {
-                this.part.decouple();
-                this.part.isPersistent = false;
-                this.part.transform.localScale = Vector3.zero;
-                this.part.deactivate();
-                Destroy(this.part.gameObject);
-                Destroy(this.part);
+                part.decouple();
+                part.isPersistent = false;
+                part.transform.localScale = Vector3.zero;
+                part.deactivate();
+                Destroy(part.gameObject);
+                Destroy(part);
             }
             else if (HighLogic.LoadedSceneIsEditor)
             {
-                this.part.transform.localScale = Vector3.zero;
+                part.transform.localScale = Vector3.zero;
             }
         }
 
         public override void OnStart(StartState state)
         {
-            if (this.Id == Guid.Empty.ToString())
+            if (Id == Guid.Empty.ToString())
             {
-                this.Id = Guid.NewGuid().ToString();
+                Id = Guid.NewGuid().ToString();
             }
             if (HighLogic.LoadedSceneIsEditor)
             {
-                this.part.OnEditorAttach += this._processEditorAttach;
-                this.CreatedInEditor = true;
+                part.OnEditorAttach += _processEditorAttach;
+                CreatedInEditor = true;
             }
-            if (HighLogic.LoadedSceneIsFlight && !this.IdResetDone)
+            if (HighLogic.LoadedSceneIsFlight && !IdResetDone)
             {
                 ActiveStrutsAddon.Enqueue(this);
             }
-            if (this.part.collider != null && this.part.FindModuleImplementing<ModuleKerbalHookAnchor>() == null)
+            if (part.collider != null && part.FindModuleImplementing<ModuleKerbalHookAnchor>() == null)
             {
-                Destroy(this.part.collider);
+                Destroy(part.collider);
             }
-            if (!this.IsKerbalHook && HighLogic.LoadedSceneIsFlight)
+            if (!IsKerbalHook && HighLogic.LoadedSceneIsFlight)
             {
-                this.part.transform.localScale = new Vector3(InFlightScale, InFlightScale, InFlightScale);
+                part.transform.localScale = new Vector3(IN_FLIGHT_SCALE, IN_FLIGHT_SCALE, IN_FLIGHT_SCALE);
             }
-            this.part.force_activate();
+            part.force_activate();
         }
 
         private void _processEditorAttach()
@@ -129,12 +129,12 @@ namespace ActiveStruts.Modules
             {
                 return;
             }
-            if (allTargets.Any(t => t.ID == this.ID && t != this))
+            if (allTargets.Any(t => t.ID == ID && t != this))
             {
-                this.ID = Guid.NewGuid();
-                if (this.Targeter != null)
+                ID = Guid.NewGuid();
+                if (Targeter != null)
                 {
-                    this.Targeter.FreeAttachTargetId = this.ID.ToString();
+                    Targeter.FreeAttachTargetId = ID.ToString();
                 }
             }
         }

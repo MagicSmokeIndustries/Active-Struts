@@ -18,7 +18,9 @@ namespace ActiveStruts.Util
     {
         public static bool AnyTargetersConnected(this ModuleActiveStrut target)
         {
-            return GetAllActiveStruts().Any(m => !m.IsTargetOnly && m.Mode == Mode.Linked && m.Target != null && m.Target == target);
+            return
+                GetAllActiveStruts()
+                    .Any(m => !m.IsTargetOnly && m.Mode == Mode.Linked && m.Target != null && m.Target == target);
         }
 
         public static List<PartStageBackup> BackupVesselStaging(this Vessel vessel)
@@ -30,21 +32,22 @@ namespace ActiveStruts.Util
 
         public static FreeAttachTargetCheck CheckFreeAttachPoint(this ModuleActiveStrut origin)
         {
-            var raycast = PerformRaycast(origin.Origin.position, origin.FreeAttachTarget.PartOrigin.position, origin.RealModelForward);
+            var raycast = PerformRaycast(origin.Origin.position, origin.FreeAttachTarget.PartOrigin.position,
+                origin.RealModelForward);
             if (raycast.HitResult)
             {
                 var distOk = raycast.DistanceFromOrigin <= Config.Instance.MaxDistance;
                 return new FreeAttachTargetCheck
-                       {
-                           TargetPart = raycast.HittedPart,
-                           HitResult = distOk
-                       };
+                {
+                    TargetPart = raycast.HittedPart,
+                    HitResult = distOk
+                };
             }
             return new FreeAttachTargetCheck
-                   {
-                       TargetPart = null,
-                       HitResult = false
-                   };
+            {
+                TargetPart = null,
+                HitResult = false
+            };
         }
 
         internal static GameObject CreateFakeRopeSling(string name, bool active, Color color)
@@ -52,9 +55,9 @@ namespace ActiveStruts.Util
             var sling = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             sling.name = name;
             Object.DestroyImmediate(sling.collider);
-            const float height = 0.0125f;
-            const float diameter = height*6.5f;
-            sling.transform.localScale = new Vector3(diameter, diameter, diameter);
+            const float HEIGHT = 0.0125f;
+            const float DIAMETER = HEIGHT*6.5f;
+            sling.transform.localScale = new Vector3(DIAMETER, DIAMETER, DIAMETER);
             var mr = sling.GetComponent<MeshRenderer>();
             mr.name = name;
             mr.material = new Material(Shader.Find("Diffuse")) {color = color};
@@ -85,8 +88,8 @@ namespace ActiveStruts.Util
             }
             localAnchor.name = name;
             Object.DestroyImmediate(localAnchor.collider);
-            const float localAnchorDim = 0.000001f;
-            localAnchor.transform.localScale = new Vector3(localAnchorDim, localAnchorDim, localAnchorDim);
+            const float LOCAL_ANCHOR_DIM = 0.000001f;
+            localAnchor.transform.localScale = new Vector3(LOCAL_ANCHOR_DIM, LOCAL_ANCHOR_DIM, LOCAL_ANCHOR_DIM);
             var mr = localAnchor.GetComponent<MeshRenderer>();
             mr.name = name;
             mr.material = new Material(Shader.Find("Diffuse")) {color = Color.magenta};
@@ -100,8 +103,8 @@ namespace ActiveStruts.Util
             var strut = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             strut.name = name;
             Object.DestroyImmediate(strut.collider);
-            const float connDim = 1f;
-            strut.transform.localScale = new Vector3(connDim, connDim, connDim);
+            const float CONN_DIM = 1f;
+            strut.transform.localScale = new Vector3(CONN_DIM, CONN_DIM, CONN_DIM);
             var mr = strut.GetComponent<MeshRenderer>();
             mr.name = name;
             mr.material = new Material(Shader.Find("Diffuse")) {color = new Color(0.15686f, 0.16078f, 0.2f, 1f)};
@@ -111,7 +114,8 @@ namespace ActiveStruts.Util
 
         public static bool DistanceInToleranceRange(float savedDistance, float currentDistance)
         {
-            return currentDistance >= savedDistance - Config.Instance.FreeAttachDistanceTolerance && currentDistance <= savedDistance + Config.Instance.FreeAttachDistanceTolerance &&
+            return currentDistance >= savedDistance - Config.Instance.FreeAttachDistanceTolerance &&
+                   currentDistance <= savedDistance + Config.Instance.FreeAttachDistanceTolerance &&
                    currentDistance <= Config.Instance.MaxDistance;
         }
 
@@ -125,14 +129,20 @@ namespace ActiveStruts.Util
             if (HighLogic.LoadedSceneIsFlight)
             {
                 var allParts = FlightGlobals.Vessels.SelectMany(v => v.parts).ToList();
-                return allParts.Where(p => p.Modules.Contains(Config.Instance.ModuleName)).Select(p => p.Modules[Config.Instance.ModuleName] as ModuleActiveStrut).ToList();
+                return
+                    allParts.Where(p => p.Modules.Contains(Config.Instance.ModuleName))
+                        .Select(p => p.Modules[Config.Instance.ModuleName] as ModuleActiveStrut)
+                        .ToList();
             }
             if (!HighLogic.LoadedSceneIsEditor)
             {
                 return new List<ModuleActiveStrut>();
             }
             var partList = CIT_Util.Utilities.ListEditorParts(true);
-            return partList.Where(p => p.Modules.Contains(Config.Instance.ModuleName)).Select(p => p.Modules[Config.Instance.ModuleName] as ModuleActiveStrut).ToList();
+            return
+                partList.Where(p => p.Modules.Contains(Config.Instance.ModuleName))
+                    .Select(p => p.Modules[Config.Instance.ModuleName] as ModuleActiveStrut)
+                    .ToList();
         }
 
         internal static List<ModuleActiveStrut> GetAllActiveStrutsInLoadRange()
@@ -142,7 +152,10 @@ namespace ActiveStruts.Util
 
         public static List<ModuleActiveStrut> GetAllConnectedTargeters(this ModuleActiveStrut target)
         {
-            return GetAllActiveStruts().Where(m => !m.IsTargetOnly && m.Mode == Mode.Linked && m.Target != null && m.Target == target).ToList();
+            return
+                GetAllActiveStruts()
+                    .Where(m => !m.IsTargetOnly && m.Mode == Mode.Linked && m.Target != null && m.Target == target)
+                    .ToList();
         }
 
         public static List<ModuleActiveStrutFreeAttachTarget> GetAllFreeAttachTargets()
@@ -152,25 +165,36 @@ namespace ActiveStruts.Util
                 var allParts = FlightGlobals.Vessels.SelectMany(v => v.parts).ToList();
                 return
                     allParts.Where(p => p.Modules.Contains(Config.Instance.ModuleActiveStrutFreeAttachTarget))
-                            .Select(p => p.Modules[Config.Instance.ModuleActiveStrutFreeAttachTarget] as ModuleActiveStrutFreeAttachTarget)
-                            .ToList();
+                        .Select(
+                            p =>
+                                p.Modules[Config.Instance.ModuleActiveStrutFreeAttachTarget] as
+                                    ModuleActiveStrutFreeAttachTarget)
+                        .ToList();
             }
             if (!HighLogic.LoadedSceneIsEditor)
             {
                 return new List<ModuleActiveStrutFreeAttachTarget>();
             }
             var partList = CIT_Util.Utilities.ListEditorParts(true);
-            return partList.Where(p => p.Modules.Contains(Config.Instance.ModuleActiveStrutFreeAttachTarget)).Select(p => p.Modules[Config.Instance.ModuleActiveStrutFreeAttachTarget] as ModuleActiveStrutFreeAttachTarget).ToList();
+            return
+                partList.Where(p => p.Modules.Contains(Config.Instance.ModuleActiveStrutFreeAttachTarget))
+                    .Select(
+                        p =>
+                            p.Modules[Config.Instance.ModuleActiveStrutFreeAttachTarget] as
+                                ModuleActiveStrutFreeAttachTarget)
+                    .ToList();
         }
 
         internal static List<ModuleActiveStrutFreeAttachTarget> GetAllFreeAttachTargetsInLoadRange()
         {
-            return CIT_Util.Utilities.GetAllModulesInLoadRange(Config.Instance.ModuleActiveStrutFreeAttachTarget, p => p as ModuleActiveStrutFreeAttachTarget);
+            return CIT_Util.Utilities.GetAllModulesInLoadRange(Config.Instance.ModuleActiveStrutFreeAttachTarget,
+                p => p as ModuleActiveStrutFreeAttachTarget);
         }
 
         internal static List<ModuleKerbalHook> GetAllKerbalHookModulesInLoadRange()
         {
-            return CIT_Util.Utilities.GetAllModulesInLoadRange(Config.Instance.ModuleKerbalHook, p => p as ModuleKerbalHook);
+            return CIT_Util.Utilities.GetAllModulesInLoadRange(Config.Instance.ModuleKerbalHook,
+                p => p as ModuleKerbalHook);
         }
 
         public static List<ModuleActiveStrut> GetAllPossibleTargets(this ModuleActiveStrut origin)
@@ -178,9 +202,11 @@ namespace ActiveStruts.Util
             Debug.Log("[AS] there are " + GetAllActiveStruts().Count + " active struts");
             foreach (var moduleActiveStrut in GetAllActiveStruts())
             {
-                Debug.Log("[AS] module with ID " + moduleActiveStrut.ID + " is a possible target: " + origin.IsPossibleTarget(moduleActiveStrut));
+                Debug.Log("[AS] module with ID " + moduleActiveStrut.ID + " is a possible target: " +
+                          origin.IsPossibleTarget(moduleActiveStrut));
             }
-            return GetAllActiveStruts().Where(m => m.ID != origin.ID && origin.IsPossibleTarget(m)).Select(m => m).ToList();
+            return
+                GetAllActiveStruts().Where(m => m.ID != origin.ID && origin.IsPossibleTarget(m)).Select(m => m).ToList();
         }
 
         internal static List<ModuleActiveStrutFreeAttachTarget> GetAllUntargetedFreeAttachTargetsInLoadRange()
@@ -189,9 +215,9 @@ namespace ActiveStruts.Util
             if (!Config.Instance.EnableFreeAttachKerbalTether)
             {
                 allTargets = (from t in allTargets
-                              let am = t.part.FindModuleImplementing<ModuleKerbalHookAnchor>()
-                              where am == null
-                              select t).ToList();
+                    let am = t.part.FindModuleImplementing<ModuleKerbalHookAnchor>()
+                    where am == null
+                    select t).ToList();
             }
             var allKerbalHooks = GetAllKerbalHookModulesInLoadRange();
             var allActiveStruts = GetAllActiveStrutsInLoadRange().Where(aS => aS.IsFreeAttached).ToList();
@@ -203,7 +229,11 @@ namespace ActiveStruts.Util
                 {
                     delList.Remove(moduleActiveStrutFreeAttachTarget);
                 }
-                if (allActiveStruts.Any(aSt => aSt.FreeAttachTarget != null && aSt.FreeAttachTarget.ID == moduleActiveStrutFreeAttachTarget.ID))
+                if (
+                    allActiveStruts.Any(
+                        aSt =>
+                            aSt.FreeAttachTarget != null &&
+                            aSt.FreeAttachTarget.ID == moduleActiveStrutFreeAttachTarget.ID))
                 {
                     delList.Remove(moduleActiveStrutFreeAttachTarget);
                 }
@@ -258,38 +288,50 @@ namespace ActiveStruts.Util
         public static bool IsPossibleFreeAttachTarget(this ModuleActiveStrut origin, Vector3 mousePosition)
         {
             var raycast = PerformRaycast(origin.Origin.position, mousePosition, origin.RealModelForward);
-            return raycast.HitResult && raycast.DistanceFromOrigin <= Config.Instance.MaxDistance && raycast.RayAngle <= Config.Instance.MaxAngle;
+            return raycast.HitResult && raycast.DistanceFromOrigin <= Config.Instance.MaxDistance &&
+                   raycast.RayAngle <= Config.Instance.MaxAngle;
         }
 
         public static bool IsPossibleTarget(this ModuleActiveStrut origin, ModuleActiveStrut possibleTarget)
         {
-            if (possibleTarget.IsConnectionFree || (possibleTarget.Targeter != null && possibleTarget.Targeter.ID == origin.ID) || (possibleTarget.Target != null && possibleTarget.Target.ID == origin.ID))
+            if (possibleTarget.IsConnectionFree ||
+                (possibleTarget.Targeter != null && possibleTarget.Targeter.ID == origin.ID) ||
+                (possibleTarget.Target != null && possibleTarget.Target.ID == origin.ID))
             {
-                var raycast = PerformRaycast(origin.Origin.position, possibleTarget.Origin.position, origin.IsFlexible ? origin.Origin.up : origin.RealModelForward, origin.part);
-                return raycast.HitResult && raycast.HittedPart == possibleTarget.part && raycast.DistanceFromOrigin <= Config.Instance.MaxDistance && raycast.RayAngle <= Config.Instance.MaxAngle;
+                var raycast = PerformRaycast(origin.Origin.position, possibleTarget.Origin.position,
+                    origin.IsFlexible ? origin.Origin.up : origin.RealModelForward, origin.part);
+                return raycast.HitResult && raycast.HittedPart == possibleTarget.part &&
+                       raycast.DistanceFromOrigin <= Config.Instance.MaxDistance &&
+                       raycast.RayAngle <= Config.Instance.MaxAngle;
             }
             return false;
         }
 
-        public static RaycastResult PerformRaycast(Vector3 origin, Vector3 target, Vector3 originUp, Part partToIgnore = null)
+        public static RaycastResult PerformRaycast(Vector3 origin, Vector3 target, Vector3 originUp,
+            Part partToIgnore = null)
         {
             var arr = partToIgnore == null ? new Part[0] : new[] {partToIgnore};
             return PerformRaycast(origin, target, originUp, arr);
         }
 
-        public static RaycastResult PerformRaycast(Vector3 origin, Vector3 target, Vector3 originUp, ICollection<Part> partsToIgnore)
+        public static RaycastResult PerformRaycast(Vector3 origin, Vector3 target, Vector3 originUp,
+            ICollection<Part> partsToIgnore)
         {
-            return CIT_Util.Utilities.PerformRaycast(origin, target, originUp, Config.Instance.MaxDistance + 1f, partsToIgnore);
+            return CIT_Util.Utilities.PerformRaycast(origin, target, originUp, Config.Instance.MaxDistance + 1f,
+                partsToIgnore);
         }
 
-        public static RaycastResult PerformRaycastFromKerbal(Vector3 origin, Vector3 target, Vector3 originUp, Vessel vesselToIgnore)
+        public static RaycastResult PerformRaycastFromKerbal(Vector3 origin, Vector3 target, Vector3 originUp,
+            Vessel vesselToIgnore)
         {
             return PerformRaycast(origin, target, originUp, vesselToIgnore.Parts);
         }
 
-        public static RaycastResult PerformRaycastIntoDir(Vector3 origin, Vector3 direction, Vector3 originUp, Part partToIgnore)
+        public static RaycastResult PerformRaycastIntoDir(Vector3 origin, Vector3 direction, Vector3 originUp,
+            Part partToIgnore)
         {
-            return CIT_Util.Utilities.PerformRaycastIntoDirection(origin, direction, originUp, Config.Instance.MaxDistance + 1f, new[] {partToIgnore});
+            return CIT_Util.Utilities.PerformRaycastIntoDirection(origin, direction, originUp,
+                Config.Instance.MaxDistance + 1f, new[] {partToIgnore});
         }
 
         internal static void RemoveAllUntargetedFreeAttachTargetsInLoadRange()
@@ -313,7 +355,8 @@ namespace ActiveStruts.Util
             }
         }
 
-        public static void RestoreVesselStaging(this Vessel vessel, List<PartStageBackup> partStageBackups, bool addExtraStage = false)
+        public static void RestoreVesselStaging(this Vessel vessel, List<PartStageBackup> partStageBackups,
+            bool addExtraStage = false)
         {
             var currVessel = FlightGlobals.ActiveVessel;
             FlightGlobals.SetActiveVessel(vessel);
@@ -339,7 +382,7 @@ namespace ActiveStruts.Util
             }
         }
 
-        internal static Color _setColorForEmissive(Color color)
+        internal static Color SetColorForEmissive(Color color)
         {
             return new Color(color.r, color.g, color.b, 1f);
         }
@@ -347,13 +390,13 @@ namespace ActiveStruts.Util
 
     public struct PartStageBackup
     {
-        public Part Part { get; private set; }
-        public int Stage { get; private set; }
-
         public PartStageBackup(Part part, int currentStage) : this()
         {
-            this.Part = part;
-            this.Stage = currentStage;
+            Part = part;
+            Stage = currentStage;
         }
+
+        public Part Part { get; private set; }
+        public int Stage { get; private set; }
     }
 }

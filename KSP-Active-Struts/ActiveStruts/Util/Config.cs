@@ -2,64 +2,71 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
-using CIT_Util.Types;
 
 namespace ActiveStruts.Util
 {
     public class Config
     {
-        // ReSharper disable once InconsistentNaming
-        private const string _freeAttachHelpText = "Left-Click on a valid position to establish a link. Press 'x' to abort.";
-        // ReSharper disable once InconsistentNaming
-        private const string _linkHelpText = "Left-Click on a possible target to establish a link. Press 'x' to abort or use the 'Abort Link' button.";
-        // ReSharper disable once InconsistentNaming
-        private const string _moduleName = "ModuleActiveStrut";
-        // ReSharper disable once InconsistentNaming
-        private const string _editorInputLockId = "[AS] editor lock";
-        public const float UnfocusedRange = 3f;
-        // ReSharper disable once InconsistentNaming
-        private const string _moduleActiveStrutFreeAttachTarget = "ModuleActiveStrutFreeAttachTarget";
-        // ReSharper disable once InconsistentNaming
-        private const string _moduleKerbalHook = "ModuleKerbalHook";
-        // ReSharper disable once InconsistentNaming
-        private const string _configFilePath = "GameData/CIT/ActiveStruts/Plugins/ActiveStruts.cfg";
+        private const string FREE_ATTACH_HELP_TEXT =
+            "Left-Click on a valid position to establish a link. Press 'x' to abort.";
 
-        private const string SettingsNodeName = "ACTIVE_STRUTS_SETTINGS";
-        public const int IdResetCheckInterval = 120;
-        private static readonly Dictionary<string, SettingsEntry> Values = new Dictionary<string, SettingsEntry>
-                                                                           {
-                                                                               {"MaxDistance", new SettingsEntry(15f)},
-                                                                               {"MaxAngle", new SettingsEntry(95f)},
-                                                                               {"WeakJointStrength", new SettingsEntry(1f)},
-                                                                               {"NormalJointStrength", new SettingsEntry(5f)},
-                                                                               {"MaximalJointStrength", new SettingsEntry(50f)},
-                                                                               {"ConnectorDimension", new SettingsEntry(0.5f)},
-                                                                               {"ColorTransparency", new SettingsEntry(0.25f)},
-                                                                               {"FreeAttachDistanceTolerance", new SettingsEntry(0.1f)},
-                                                                               {"FreeAttachStrutExtension", new SettingsEntry(-0.02f)},
-                                                                               {"StartDelay", new SettingsEntry(60)},
-                                                                               {"StrutRealignInterval", new SettingsEntry(2)},
-                                                                               {"SoundAttachFile", new SettingsEntry("CIT/ActiveStruts/Sounds/AS_Attach")},
-                                                                               {"SoundDetachFile", new SettingsEntry("CIT/ActiveStruts/Sounds/AS_Detach")},
-                                                                               {"SoundBreakFile", new SettingsEntry("CIT/ActiveStruts/Sounds/AS_Break")},
-                                                                               {"GlobalJointEnforcement", new SettingsEntry(false)},
-                                                                               {"GlobalJointWeakness", new SettingsEntry(false)},
-                                                                               {"StrutRealignDistanceTolerance", new SettingsEntry(0.02f)},
-                                                                               {"EnableDocking", new SettingsEntry(false)},
-                                                                               {"ShowHelpTexts", new SettingsEntry(true)},
-                                                                               {"ShowStraightOutHint", new SettingsEntry(true)},
-                                                                               {"StraightOutHintDuration", new SettingsEntry(1)},
-                                                                               {"TargetHighlightDuration", new SettingsEntry(3)},
-                                                                               {"KerbalTetherSpringForce", new SettingsEntry(5000f)},
-                                                                               {"KerbalTetherDamper", new SettingsEntry(500f)},
-                                                                               {"AllowFreeAttachInEditor", new SettingsEntry(false)},
-                                                                               {"MaxAngleAutostrutter", new SettingsEntry(100f)},
-                                                                               {"AutoStrutterConnectToOwnGroup", new SettingsEntry(false)},
-                                                                               {"EnableFreeAttach", new SettingsEntry(false)},
-                                                                               {"EnableFreeAttachKerbalTether", new SettingsEntry(false)}
-                                                                           };
+        private const string LINK_HELP_TEXT =
+            "Left-Click on a possible target to establish a link. Press 'x' to abort or use the 'Abort Link' button.";
 
-        private static Config _instance;
+        private const string MODULE_NAME = "ModuleActiveStrut";
+        private const string EDITOR_INPUT_LOCK_ID = "[AS] editor lock";
+        public const float UNFOCUSED_RANGE = 3f;
+        private const string MODULE_ACTIVE_STRUT_FREE_ATTACH_TARGET = "ModuleActiveStrutFreeAttachTarget";
+        private const string MODULE_KERBAL_HOOK = "ModuleKerbalHook";
+        private const string CONFIG_FILE_PATH = "GameData/CIT/ActiveStruts/Plugins/ActiveStruts.cfg";
+
+        private const string SETTINGS_NODE_NAME = "ACTIVE_STRUTS_SETTINGS";
+        public const int ID_RESET_CHECK_INTERVAL = 120;
+
+        private static readonly Dictionary<string, SettingsEntry> values = new Dictionary<string, SettingsEntry>
+        {
+            {"MaxDistance", new SettingsEntry(15f)},
+            {"MaxAngle", new SettingsEntry(95f)},
+            {"WeakJointStrength", new SettingsEntry(1f)},
+            {"NormalJointStrength", new SettingsEntry(5f)},
+            {"MaximalJointStrength", new SettingsEntry(50f)},
+            {"ConnectorDimension", new SettingsEntry(0.5f)},
+            {"ColorTransparency", new SettingsEntry(0.25f)},
+            {"FreeAttachDistanceTolerance", new SettingsEntry(0.1f)},
+            {"FreeAttachStrutExtension", new SettingsEntry(-0.02f)},
+            {"StartDelay", new SettingsEntry(60)},
+            {"StrutRealignInterval", new SettingsEntry(2)},
+            {"SoundAttachFile", new SettingsEntry("CIT/ActiveStruts/Sounds/AS_Attach")},
+            {"SoundDetachFile", new SettingsEntry("CIT/ActiveStruts/Sounds/AS_Detach")},
+            {"SoundBreakFile", new SettingsEntry("CIT/ActiveStruts/Sounds/AS_Break")},
+            {"GlobalJointEnforcement", new SettingsEntry(false)},
+            {"GlobalJointWeakness", new SettingsEntry(false)},
+            {"StrutRealignDistanceTolerance", new SettingsEntry(0.02f)},
+            {"EnableDocking", new SettingsEntry(false)},
+            {"ShowHelpTexts", new SettingsEntry(true)},
+            {"ShowStraightOutHint", new SettingsEntry(true)},
+            {"StraightOutHintDuration", new SettingsEntry(1)},
+            {"TargetHighlightDuration", new SettingsEntry(3)},
+            {"KerbalTetherSpringForce", new SettingsEntry(5000f)},
+            {"KerbalTetherDamper", new SettingsEntry(500f)},
+            {"AllowFreeAttachInEditor", new SettingsEntry(false)},
+            {"MaxAngleAutostrutter", new SettingsEntry(100f)},
+            {"AutoStrutterConnectToOwnGroup", new SettingsEntry(false)},
+            {"EnableFreeAttach", new SettingsEntry(false)},
+            {"EnableFreeAttachKerbalTether", new SettingsEntry(false)}
+        };
+
+        private static Config instance;
+
+        private Config()
+        {
+            if (!_configFileExists())
+            {
+                _initialSave();
+                Thread.Sleep(500);
+            }
+            _load();
+        }
 
         public bool EnableFreeAttach
         {
@@ -88,7 +95,7 @@ namespace ActiveStruts.Util
 
         private static string ConfigFilePath
         {
-            get { return KSPUtil.ApplicationRootPath + _configFilePath; }
+            get { return KSPUtil.ApplicationRootPath + CONFIG_FILE_PATH; }
         }
 
         public float ConnectorDimension
@@ -103,7 +110,7 @@ namespace ActiveStruts.Util
 
         public string EditorInputLockId
         {
-            get { return _editorInputLockId; }
+            get { return EDITOR_INPUT_LOCK_ID; }
         }
 
         public float FreeAttachDistanceTolerance
@@ -111,11 +118,9 @@ namespace ActiveStruts.Util
             get { return (float) _getValue<double>("FreeAttachDistanceTolerance"); }
         }
 
-        // ReSharper disable once InconsistentNaming
-
         public string FreeAttachHelpText
         {
-            get { return _freeAttachHelpText; }
+            get { return FREE_ATTACH_HELP_TEXT; }
         }
 
         public float FreeAttachStrutExtension
@@ -135,7 +140,7 @@ namespace ActiveStruts.Util
 
         public static Config Instance
         {
-            get { return _instance ?? (_instance = new Config()); }
+            get { return instance ?? (instance = new Config()); }
         }
 
         public float KerbalTetherDamper
@@ -148,11 +153,9 @@ namespace ActiveStruts.Util
             get { return _getValue<float>("KerbalTetherSpringForce"); }
         }
 
-        // ReSharper disable once InconsistentNaming
-
         public string LinkHelpText
         {
-            get { return _linkHelpText; }
+            get { return LINK_HELP_TEXT; }
         }
 
         public float MaxAngle
@@ -177,19 +180,17 @@ namespace ActiveStruts.Util
 
         public string ModuleActiveStrutFreeAttachTarget
         {
-            get { return _moduleActiveStrutFreeAttachTarget; }
+            get { return MODULE_ACTIVE_STRUT_FREE_ATTACH_TARGET; }
         }
 
         public string ModuleKerbalHook
         {
-            get { return _moduleKerbalHook; }
+            get { return MODULE_KERBAL_HOOK; }
         }
-
-        // ReSharper disable once InconsistentNaming
 
         public string ModuleName
         {
-            get { return _moduleName; }
+            get { return MODULE_NAME; }
         }
 
         public float NormalJointStrength
@@ -252,16 +253,6 @@ namespace ActiveStruts.Util
             get { return (float) _getValue<double>("WeakJointStrength"); }
         }
 
-        private Config()
-        {
-            if (!_configFileExists())
-            {
-                _initialSave();
-                Thread.Sleep(500);
-            }
-            _load();
-        }
-
         private static bool _configFileExists()
         {
             return File.Exists(ConfigFilePath);
@@ -269,19 +260,19 @@ namespace ActiveStruts.Util
 
         private static T _getValue<T>(string key)
         {
-            if (!Values.ContainsKey(key))
+            if (!values.ContainsKey(key))
             {
                 throw new ArgumentException("config key unknown");
             }
-            var val = Values[key];
+            var val = values[key];
             var ret = val.Value ?? val.DefaultValue;
-            return (T) Convert.ChangeType(ret, typeof(T));
+            return (T) Convert.ChangeType(ret, typeof (T));
         }
 
         private static void _initialSave()
         {
-            ConfigNode node = new ConfigNode(), settings = new ConfigNode(SettingsNodeName);
-            foreach (var settingsEntry in Values)
+            ConfigNode node = new ConfigNode(), settings = new ConfigNode(SETTINGS_NODE_NAME);
+            foreach (var settingsEntry in values)
             {
                 settings.AddValue(settingsEntry.Key, settingsEntry.Value.DefaultValue);
             }
@@ -292,8 +283,8 @@ namespace ActiveStruts.Util
         private static void _load()
         {
             var node = ConfigNode.Load(ConfigFilePath);
-            var settings = node.GetNode(SettingsNodeName);
-            foreach (var settingsEntry in Values)
+            var settings = node.GetNode(SETTINGS_NODE_NAME);
+            foreach (var settingsEntry in values)
             {
                 var val = settings.GetValue(settingsEntry.Key);
                 if (val != null)

@@ -19,10 +19,10 @@ namespace ActiveStruts.Modules
 {
     public class ModuleActiveStrut : PartModule, IDResetable
     {
-        private const ControlTypes EditorLockMask = ControlTypes.EDITOR_PAD_PICK_PLACE | ControlTypes.EDITOR_ICON_PICK;
-        private const float NormalAniSpeed = 1.5f;
-        private const float FastAniSpeed = 1000f;
-        private readonly object _freeAttachStrutUpdateLock = new object();
+        private const ControlTypes EDITOR_LOCK_MASK = ControlTypes.EDITOR_PAD_PICK_PLACE | ControlTypes.EDITOR_ICON_PICK;
+        private const float NORMAL_ANI_SPEED = 1.5f;
+        private const float FAST_ANI_SPEED = 1000f;
+        private readonly object freeAttachStrutUpdateLock = new object();
         [KSPField(isPersistant = true)] private bool AniExtended;
         [KSPField(isPersistant = false)] public string AnimationName;
         [KSPField(isPersistant = true)] public uint DockingVesselId;
@@ -78,67 +78,67 @@ namespace ActiveStruts.Modules
         [KSPField(isPersistant = false)] public float StrutScaleFactor;
         [KSPField(isPersistant = true)] public string TargetId = Guid.Empty.ToString();
         [KSPField(isPersistant = true)] public string TargeterId = Guid.Empty.ToString();
-        private bool _brightLightsExtended;
-        private bool _delayedStartFlag;
-        private bool _dullLightsExtended = true;
-        private Dictionary<ModelFeaturesType, OrientationInfo> _featureOrientation;
-        private GameObject _flexFakeSlingLocal;
-        private GameObject _flexFakeSlingTarget;
-        private SpringJoint _flexJoint;
-        private GameObject _flexStrut;
-        private Part _freeAttachPart;
-        private ModuleActiveStrutFreeAttachTarget _freeAttachTarget;
-        private Transform _headTransform;
-        private bool _initialized;
-        private ConfigurableJoint _joint;
-        private AttachNode _jointAttachNode;
-        private bool _jointBroken;
-        private LinkType _linkType;
-        private GameObject _localFlexAnchor;
-        private FixedJoint _localFlexAnchorFixedJoint;
-        private Mode _mode = Mode.Undefined;
-        private Vector3 _oldTargetPosition = Vector3.zero;
-        private PartJoint _partJoint;
-        private Transform _simpleLights;
-        private Transform _simpleLightsSecondary;
-        private GameObject _simpleStrut;
-        private bool _soundFlag;
-        private bool _strutFinallyCreated;
-        private int _strutRealignCounter;
-        private bool _targetGrapplerVisible;
-        private int _ticksForDelayedStart;
-        private bool _straightOutAttached;
+        private bool brightLightsExtended;
+        private bool delayedStartFlag;
+        private bool dullLightsExtended = true;
+        private Dictionary<ModelFeaturesType, OrientationInfo> featureOrientation;
+        private GameObject flexFakeSlingLocal;
+        private GameObject flexFakeSlingTarget;
+        private SpringJoint flexJoint;
+        private GameObject flexStrut;
+        private Part freeAttachPart;
+        private ModuleActiveStrutFreeAttachTarget freeAttachTarget;
+        private Transform headTransform;
+        private bool initialized;
+        private ConfigurableJoint joint;
+        private AttachNode jointAttachNode;
+        private bool jointBroken;
+        private LinkType linkType;
+        private GameObject localFlexAnchor;
+        private FixedJoint localFlexAnchorFixedJoint;
+        private Mode mode = Mode.Undefined;
+        private Vector3 oldTargetPosition = Vector3.zero;
+        private PartJoint partJoint;
+        private Transform simpleLights;
+        private Transform simpleLightsSecondary;
+        private GameObject simpleStrut;
+        private bool soundFlag;
+        private bool straightOutAttached;
+        private bool strutFinallyCreated;
+        private int strutRealignCounter;
+        private bool targetGrapplerVisible;
+        private int ticksForDelayedStart;
 
         public Animation DeployAnimation
         {
             get
             {
-                if (string.IsNullOrEmpty(this.AnimationName))
+                if (string.IsNullOrEmpty(AnimationName))
                 {
                     return null;
                 }
-                return this.part.FindModelAnimators(this.AnimationName)[0];
+                return part.FindModelAnimators(AnimationName)[0];
             }
         }
 
         internal Vector3 FlexOffsetOriginPosition
         {
-            get { return this.Origin.position + (this.Origin.up*this.FlexibleStrutOffset); }
+            get { return Origin.position + (Origin.up*FlexibleStrutOffset); }
         }
 
         private Part FreeAttachPart
         {
             get
             {
-                if (this._freeAttachPart != null)
+                if (freeAttachPart != null)
                 {
-                    return this._freeAttachPart;
+                    return freeAttachPart;
                 }
-                if (this.FreeAttachTarget != null)
+                if (FreeAttachTarget != null)
                 {
-                    this._freeAttachPart = this.FreeAttachTarget.part;
+                    freeAttachPart = FreeAttachTarget.part;
                 }
-                return this._freeAttachPart;
+                return freeAttachPart;
             }
         }
 
@@ -146,23 +146,27 @@ namespace ActiveStruts.Modules
         {
             get
             {
-                if (this.FreeAttachPositionOffsetVector == null)
+                if (FreeAttachPositionOffsetVector == null)
                 {
                     return Vector3.zero;
                 }
-                var vArr = this.FreeAttachPositionOffsetVector.Split(' ').Select(Convert.ToSingle).ToArray();
+                var vArr = FreeAttachPositionOffsetVector.Split(' ').Select(Convert.ToSingle).ToArray();
                 return new Vector3(vArr[0], vArr[1], vArr[2]);
             }
-            set { this.FreeAttachPositionOffsetVector = String.Format("{0} {1} {2}", value.x, value.y, value.z); }
+            set { FreeAttachPositionOffsetVector = String.Format("{0} {1} {2}", value.x, value.y, value.z); }
         }
 
         public ModuleActiveStrutFreeAttachTarget FreeAttachTarget
         {
-            get { return this._freeAttachTarget ?? (this._freeAttachTarget = Utilities.FindFreeAttachTarget(new Guid(this.FreeAttachTargetId))); }
+            get
+            {
+                return freeAttachTarget ??
+                       (freeAttachTarget = Utilities.FindFreeAttachTarget(new Guid(FreeAttachTargetId)));
+            }
             set
             {
-                this.FreeAttachTargetId = value != null ? value.ID.ToString() : Guid.Empty.ToString();
-                this._freeAttachTarget = value;
+                FreeAttachTargetId = value != null ? value.ID.ToString() : Guid.Empty.ToString();
+                freeAttachTarget = value;
             }
         }
 
@@ -170,11 +174,11 @@ namespace ActiveStruts.Modules
         {
             get
             {
-                if (this.Id == null || new Guid(this.Id) == Guid.Empty)
+                if (Id == null || new Guid(Id) == Guid.Empty)
                 {
-                    this.Id = Guid.NewGuid().ToString();
+                    Id = Guid.NewGuid().ToString();
                 }
-                return new Guid(this.Id);
+                return new Guid(Id);
             }
         }
 
@@ -182,33 +186,33 @@ namespace ActiveStruts.Modules
         {
             get
             {
-                var ani = this.DeployAnimation;
-                return ani != null && ani.IsPlaying(this.AnimationName);
+                var ani = DeployAnimation;
+                return ani != null && ani.IsPlaying(AnimationName);
             }
         }
 
         public bool IsConnectionFree
         {
-            get { return this.IsTargetOnly || !this.IsLinked || (this.IsLinked && this.Mode == Mode.Unlinked); }
+            get { return IsTargetOnly || !IsLinked || (IsLinked && Mode == Mode.Unlinked); }
         }
 
         public LinkType LinkType
         {
-            get { return this._linkType; }
+            get { return linkType; }
             set
             {
-                this._linkType = value;
-                this.Strength = value.ToString();
+                linkType = value;
+                Strength = value.ToString();
             }
         }
 
         public Mode Mode
         {
-            get { return this._mode; }
+            get { return mode; }
             set
             {
-                this._mode = value;
-                this.State = value.ToString();
+                mode = value;
+                State = value.ToString();
             }
         }
 
@@ -216,48 +220,49 @@ namespace ActiveStruts.Modules
         {
             get
             {
-                if (this.InvertRightAxis)
+                if (InvertRightAxis)
                 {
-                    return this.Origin.right*-1;
+                    return Origin.right*-1;
                 }
-                return this.Origin.right;
+                return Origin.right;
             }
         }
 
         public ModuleActiveStrut Target
         {
-            get { return this.TargetId == Guid.Empty.ToString() ? null : Utilities.GetStrutById(new Guid(this.TargetId)); }
-            set { this.TargetId = value != null ? value.ID.ToString() : Guid.Empty.ToString(); }
+            get { return TargetId == Guid.Empty.ToString() ? null : Utilities.GetStrutById(new Guid(TargetId)); }
+            set { TargetId = value != null ? value.ID.ToString() : Guid.Empty.ToString(); }
         }
 
         public ModuleActiveStrut Targeter
         {
-            get { return this.TargeterId == Guid.Empty.ToString() ? null : Utilities.GetStrutById(new Guid(this.TargeterId)); }
-            set { this.TargeterId = value != null ? value.ID.ToString() : Guid.Empty.ToString(); }
+            get { return TargeterId == Guid.Empty.ToString() ? null : Utilities.GetStrutById(new Guid(TargeterId)); }
+            set { TargeterId = value != null ? value.ID.ToString() : Guid.Empty.ToString(); }
         }
 
         public void ResetId()
         {
-            var oldId = this.Id;
-            this.Id = Guid.NewGuid().ToString();
+            var oldId = Id;
+            Id = Guid.NewGuid().ToString();
             foreach (var moduleActiveStrut in Utilities.GetAllActiveStruts())
             {
                 if (moduleActiveStrut.TargetId != null && moduleActiveStrut.TargetId == oldId)
                 {
-                    moduleActiveStrut.TargetId = this.Id;
+                    moduleActiveStrut.TargetId = Id;
                 }
                 if (moduleActiveStrut.TargeterId != null && moduleActiveStrut.TargeterId == oldId)
                 {
-                    moduleActiveStrut.TargeterId = this.Id;
+                    moduleActiveStrut.TargeterId = Id;
                 }
             }
-            this.IdResetDone = true;
+            IdResetDone = true;
         }
 
-        [KSPEvent(name = "AbortLink", active = false, guiName = "Abort Link", guiActiveEditor = true, guiActiveUnfocused = true, unfocusedRange = Config.UnfocusedRange)]
+        [KSPEvent(name = "AbortLink", active = false, guiName = "Abort Link", guiActiveEditor = true,
+            guiActiveUnfocused = true, unfocusedRange = Config.UNFOCUSED_RANGE)]
         public void AbortLink()
         {
-            this.Mode = Mode.Unlinked;
+            Mode = Mode.Unlinked;
             Utilities.ResetAllFromTargeting();
             ActiveStrutsAddon.Mode = AddonMode.None;
             ActiveStrutsAddon.FlexibleAttachActive = false;
@@ -266,138 +271,143 @@ namespace ActiveStruts.Modules
                 InputLockManager.RemoveControlLock(Config.Instance.EditorInputLockId);
             }
             OSD.PostMessage("Link aborted.");
-            this.UpdateGui();
-            this.RetractHead(NormalAniSpeed);
+            UpdateGui();
+            RetractHead(NORMAL_ANI_SPEED);
         }
 
         public void CreateJoint(Rigidbody originBody, Rigidbody targetBody, LinkType type, Vector3 anchorPosition)
         {
-            if (HighLogic.LoadedSceneIsFlight && this.part != null && this.part.attachJoint != null && this.part.attachJoint.Joint != null)
+            if (HighLogic.LoadedSceneIsFlight && part != null && part.attachJoint != null &&
+                part.attachJoint.Joint != null)
             {
-                this.part.attachJoint.Joint.breakForce = Mathf.Infinity;
-                this.part.attachJoint.Joint.breakTorque = Mathf.Infinity;
-                if (!this.IsFreeAttached && this.Target != null && this.Target.part != null && this.Target.part.attachJoint != null && this.Target.part.attachJoint.Joint != null)
+                part.attachJoint.Joint.breakForce = Mathf.Infinity;
+                part.attachJoint.Joint.breakTorque = Mathf.Infinity;
+                if (!IsFreeAttached && Target != null && Target.part != null && Target.part.attachJoint != null &&
+                    Target.part.attachJoint.Joint != null)
                 {
-                    this.Target.part.attachJoint.Joint.breakForce = Mathf.Infinity;
-                    this.Target.part.attachJoint.Joint.breakTorque = Mathf.Infinity;
+                    Target.part.attachJoint.Joint.breakForce = Mathf.Infinity;
+                    Target.part.attachJoint.Joint.breakTorque = Mathf.Infinity;
                 }
             }
-            this.LinkType = type;
-            if (this.IsFlexible)
+            LinkType = type;
+            if (IsFlexible)
             {
-                this.StartCoroutine(this.WaitAndCreateFlexibleJoint());
+                StartCoroutine(WaitAndCreateFlexibleJoint());
             }
             var breakForce = type.GetJointStrength();
-            if (!this.IsFreeAttached)
+            if (!IsFreeAttached)
             {
-                var moduleActiveStrut = this.Target;
+                var moduleActiveStrut = Target;
                 if (moduleActiveStrut != null)
                 {
                     moduleActiveStrut.LinkType = type;
-                    this.IsOwnVesselConnected = moduleActiveStrut.vessel == this.vessel;
+                    IsOwnVesselConnected = moduleActiveStrut.vessel == vessel;
                 }
             }
             else
             {
-                this.IsOwnVesselConnected = this.FreeAttachPart.vessel == this.vessel;
+                IsOwnVesselConnected = FreeAttachPart.vessel == vessel;
             }
-            if (this.IsFlexible)
+            if (IsFlexible)
             {
                 return;
             }
-            if (!this.IsEnforced || Config.Instance.GlobalJointWeakness)
+            if (!IsEnforced || Config.Instance.GlobalJointWeakness)
             {
-                this._joint = originBody.gameObject.AddComponent<ConfigurableJoint>();
-                this._joint.connectedBody = targetBody;
-                this._joint.breakForce = this._joint.breakTorque = Mathf.Infinity;
-                this._joint.xMotion = ConfigurableJointMotion.Locked;
-                this._joint.yMotion = ConfigurableJointMotion.Locked;
-                this._joint.zMotion = ConfigurableJointMotion.Locked;
-                this._joint.angularXMotion = ConfigurableJointMotion.Locked;
-                this._joint.angularYMotion = ConfigurableJointMotion.Locked;
-                this._joint.angularZMotion = ConfigurableJointMotion.Locked;
-                this._joint.projectionAngle = 0f;
-                this._joint.projectionDistance = 0f;
-                this._joint.targetPosition = anchorPosition;
-                this._joint.anchor = anchorPosition;
+                joint = originBody.gameObject.AddComponent<ConfigurableJoint>();
+                joint.connectedBody = targetBody;
+                joint.breakForce = joint.breakTorque = Mathf.Infinity;
+                joint.xMotion = ConfigurableJointMotion.Locked;
+                joint.yMotion = ConfigurableJointMotion.Locked;
+                joint.zMotion = ConfigurableJointMotion.Locked;
+                joint.angularXMotion = ConfigurableJointMotion.Locked;
+                joint.angularYMotion = ConfigurableJointMotion.Locked;
+                joint.angularZMotion = ConfigurableJointMotion.Locked;
+                joint.projectionAngle = 0f;
+                joint.projectionDistance = 0f;
+                joint.targetPosition = anchorPosition;
+                joint.anchor = anchorPosition;
             }
             else
             {
-                this._manageAttachNode(breakForce);
+                ManageAttachNode(breakForce);
             }
-            this.PlayAttachSound();
+            PlayAttachSound();
         }
 
         public void CreateStrut(Vector3 target, float distancePercent = 1, float strutOffset = 0f)
         {
-            if (this.IsFlexible)
+            if (IsFlexible)
             {
-                if (this._flexStrut != null)
+                if (flexStrut != null)
                 {
-                    this._flexStrut.SetActive(false);
-                    var trans = this._flexStrut.transform;
-                    trans.position = this.FlexOffsetOriginPosition;
-                    trans.LookAt(this.Target.FlexOffsetOriginPosition);
+                    flexStrut.SetActive(false);
+                    var trans = flexStrut.transform;
+                    trans.position = FlexOffsetOriginPosition;
+                    trans.LookAt(Target.FlexOffsetOriginPosition);
                     trans.localScale = new Vector3(trans.position.x, trans.position.y, 1);
-                    var dist = (Vector3.Distance(Vector3.zero, trans.InverseTransformPoint(this.Target.FlexOffsetOriginPosition))/2.0f);
+                    var dist =
+                        (Vector3.Distance(Vector3.zero, trans.InverseTransformPoint(Target.FlexOffsetOriginPosition))/
+                         2.0f);
                     trans.localScale = new Vector3(0.025f, dist, 0.025f);
                     trans.Rotate(new Vector3(0, 0, 1), 90f);
                     trans.Rotate(new Vector3(1, 0, 0), 90f);
                     trans.Translate(new Vector3(0f, dist, 0f));
-                    this._flexStrut.SetActive(true);
+                    flexStrut.SetActive(true);
                 }
-                if (this._flexFakeSlingLocal != null)
+                if (flexFakeSlingLocal != null)
                 {
-                    this._moveFakeRopeSling(true, this._flexFakeSlingLocal);
+                    MoveFakeRopeSling(true, flexFakeSlingLocal);
                 }
-                if (this._flexFakeSlingTarget != null)
+                if (flexFakeSlingTarget != null)
                 {
-                    this._moveFakeRopeSling(false, this._flexFakeSlingTarget);
+                    MoveFakeRopeSling(false, flexFakeSlingTarget);
                 }
             }
             else
             {
-                if (this.ModelFeatures[ModelFeaturesType.Animation])
+                if (ModelFeatures[ModelFeaturesType.Animation])
                 {
-                    if (this.IsAnimationPlaying)
+                    if (IsAnimationPlaying)
                     {
                         return;
                     }
                 }
-                if (this.Target != null && this.Target.ModelFeatures[ModelFeaturesType.Animation])
+                if (Target != null && Target.ModelFeatures[ModelFeaturesType.Animation])
                 {
-                    if (this.Target.IsAnimationPlaying)
+                    if (Target.IsAnimationPlaying)
                     {
                         return;
                     }
                 }
-                if (this.Targeter != null && this.Targeter.ModelFeatures[ModelFeaturesType.Animation])
+                if (Targeter != null && Targeter.ModelFeatures[ModelFeaturesType.Animation])
                 {
-                    if (this.Targeter.IsAnimationPlaying)
+                    if (Targeter.IsAnimationPlaying)
                     {
                         return;
                     }
                 }
-                if (this.ModelFeatures[ModelFeaturesType.Strut])
+                if (ModelFeatures[ModelFeaturesType.Strut])
                 {
-                    var strut = this.Strut;
+                    var strut = Strut;
                     strut.LookAt(target);
                     strut.Rotate(new Vector3(0, 1, 0), 90f);
                     strut.localScale = new Vector3(1, 1, 1);
-                    var distance = (Vector3.Distance(Vector3.zero, this.Strut.InverseTransformPoint(target))*distancePercent*this.StrutScaleFactor) + strutOffset; //*-1
-                    if (this.IsFreeAttached)
+                    var distance = (Vector3.Distance(Vector3.zero, Strut.InverseTransformPoint(target))*distancePercent*
+                                    StrutScaleFactor) + strutOffset; //*-1
+                    if (IsFreeAttached)
                     {
                         distance += Config.Instance.FreeAttachStrutExtension;
                     }
-                    this.Strut.localScale = new Vector3(distance, 1, 1);
-                    this._transformLights(true, target, this.IsDocked);
+                    Strut.localScale = new Vector3(distance, 1, 1);
+                    TransformLights(true, target, IsDocked);
                 }
                 else
                 {
-                    var localStrutOrigin = this.ModelFeatures[ModelFeaturesType.HeadExtension] ? this.StrutOrigin : this.Origin;
-                    this._simpleStrut.SetActive(false);
+                    var localStrutOrigin = ModelFeatures[ModelFeaturesType.HeadExtension] ? StrutOrigin : Origin;
+                    simpleStrut.SetActive(false);
                     var dist = Vector3.Distance(localStrutOrigin.position, target)*distancePercent/2f;
-                    var trans = this._simpleStrut.transform;
+                    var trans = simpleStrut.transform;
                     trans.position = localStrutOrigin.position;
                     trans.LookAt(target);
                     trans.localScale = new Vector3(trans.position.x, trans.position.y, 1);
@@ -405,115 +415,119 @@ namespace ActiveStruts.Modules
                     trans.Rotate(new Vector3(0, 0, 1), 90f);
                     trans.Rotate(new Vector3(1, 0, 0), 90f);
                     trans.Translate(new Vector3(0f, 1f, 0f)*dist);
-                    this._simpleStrut.SetActive(true);
+                    simpleStrut.SetActive(true);
                 }
-                if (this.ModelFeatures[ModelFeaturesType.HeadExtension])
+                if (ModelFeatures[ModelFeaturesType.HeadExtension])
                 {
-                    this._headTransform.LookAt(target);
+                    headTransform.LookAt(target);
                 }
-                this._strutFinallyCreated = true;
+                strutFinallyCreated = true;
             }
         }
 
         private void DeployHead(float speed)
         {
-            this.AniExtended = true;
-            this.PlayDeployAnimation(speed);
+            AniExtended = true;
+            PlayDeployAnimation(speed);
         }
 
         public void DestroyJoint()
         {
-            if (this._flexJoint != null)
+            if (flexJoint != null)
             {
-                DestroyImmediate(this._flexJoint);
+                DestroyImmediate(flexJoint);
             }
-            if (this._localFlexAnchorFixedJoint != null)
+            if (localFlexAnchorFixedJoint != null)
             {
-                DestroyImmediate(this._localFlexAnchorFixedJoint);
+                DestroyImmediate(localFlexAnchorFixedJoint);
             }
-            if (this._localFlexAnchor != null)
+            if (localFlexAnchor != null)
             {
-                DestroyImmediate(this._localFlexAnchor);
+                DestroyImmediate(localFlexAnchor);
             }
             try
             {
-                if (this._partJoint != null)
+                if (partJoint != null)
                 {
-                    this._partJoint.DestroyJoint();
-                    this.part.attachNodes.Remove(this._jointAttachNode);
-                    this._jointAttachNode.owner = null;
+                    partJoint.DestroyJoint();
+                    part.attachNodes.Remove(jointAttachNode);
+                    jointAttachNode.owner = null;
                 }
-                DestroyImmediate(this._partJoint);
+                DestroyImmediate(partJoint);
             }
             catch (Exception)
             {
                 //ahem...
             }
-            DestroyImmediate(this._joint);
-            this._partJoint = null;
-            this._jointAttachNode = null;
-            this._joint = null;
-            this.LinkType = LinkType.None;
-            if (this.IsDocked)
+            DestroyImmediate(joint);
+            partJoint = null;
+            jointAttachNode = null;
+            joint = null;
+            LinkType = LinkType.None;
+            if (IsDocked)
             {
-                this.ProcessUnDock(true);
+                ProcessUnDock(true);
             }
-            this._updateSimpleLights();
+            UpdateSimpleLights();
         }
 
         public void DestroyStrut()
         {
-            if (this.IsFlexible)
+            if (IsFlexible)
             {
-                if (this._flexStrut != null)
+                if (flexStrut != null)
                 {
-                    this._flexStrut.SetActive(false);
+                    flexStrut.SetActive(false);
                 }
             }
             else
             {
-                this.Strut.localScale = Vector3.zero;
-                this.ShowGrappler(false, Vector3.zero, Vector3.zero, false, Vector3.zero);
-                this.ShowHooks(false, Vector3.zero, Vector3.zero);
-                this._transformLights(false, Vector3.zero);
+                Strut.localScale = Vector3.zero;
+                ShowGrappler(false, Vector3.zero, Vector3.zero, false, Vector3.zero);
+                ShowHooks(false, Vector3.zero, Vector3.zero);
+                TransformLights(false, Vector3.zero);
             }
-            this._strutFinallyCreated = false;
+            strutFinallyCreated = false;
         }
 
-        [KSPEvent(name = "Dock", active = false, guiName = "Dock with Target", guiActiveEditor = false, guiActiveUnfocused = true, unfocusedRange = Config.UnfocusedRange)]
+        [KSPEvent(name = "Dock", active = false, guiName = "Dock with Target", guiActiveEditor = false,
+            guiActiveUnfocused = true, unfocusedRange = Config.UNFOCUSED_RANGE)]
         public void Dock()
         {
-            if (HighLogic.LoadedSceneIsEditor || !this.IsLinked || !this.IsConnectionOrigin || this.IsTargetOnly || this.IsOwnVesselConnected || (this.IsFreeAttached ? this.FreeAttachPart == null : this.Target == null) || this.IsDocked)
+            if (HighLogic.LoadedSceneIsEditor || !IsLinked || !IsConnectionOrigin || IsTargetOnly ||
+                IsOwnVesselConnected || (IsFreeAttached ? FreeAttachPart == null : Target == null) || IsDocked)
             {
                 OSD.PostMessage("Can't dock.");
                 return;
             }
-            if (this.IsFreeAttached ? this.FreeAttachPart != null && this.FreeAttachPart.vessel == this.vessel : this.Target != null && this.Target.part != null && this.Target.part.vessel == this.vessel)
+            if (IsFreeAttached
+                ? FreeAttachPart != null && FreeAttachPart.vessel == vessel
+                : Target != null && Target.part != null && Target.part.vessel == vessel)
             {
                 OSD.PostMessage("Already docked");
                 return;
             }
-            this.DockingVesselName = this.vessel.GetName();
-            this.DockingVesselTypeString = this.vessel.vesselType.ToString();
-            this.DockingVesselId = this.vessel.rootPart.flightID;
-            this.IsDocked = true;
-            if (this.IsFreeAttached)
+            DockingVesselName = vessel.GetName();
+            DockingVesselTypeString = vessel.vesselType.ToString();
+            DockingVesselId = vessel.rootPart.flightID;
+            IsDocked = true;
+            if (IsFreeAttached)
             {
-                var freeAttachPart = this.FreeAttachPart;
-                if (freeAttachPart != null)
+                var attachPart = FreeAttachPart;
+                if (attachPart != null)
                 {
-                    freeAttachPart.Couple(this.part);
+                    attachPart.Couple(part);
                 }
             }
             else
             {
-                var moduleActiveStrut = this.Target;
+                var moduleActiveStrut = Target;
                 if (moduleActiveStrut != null)
                 {
-                    moduleActiveStrut.part.Couple(this.part);
+                    moduleActiveStrut.part.Couple(part);
                 }
             }
-            this.UpdateGui();
+            UpdateGui();
             foreach (var moduleActiveStrut in Utilities.GetAllActiveStruts())
             {
                 moduleActiveStrut.UpdateGui();
@@ -521,33 +535,35 @@ namespace ActiveStruts.Modules
             OSD.PostMessage("Docked.");
         }
 
-        [KSPEvent(name = "FreeAttach", active = false, guiActiveEditor = false, guiName = "FreeAttach Link", guiActiveUnfocused = true, unfocusedRange = Config.UnfocusedRange)]
+        [KSPEvent(name = "FreeAttach", active = false, guiActiveEditor = false, guiName = "FreeAttach Link",
+            guiActiveUnfocused = true, unfocusedRange = Config.UNFOCUSED_RANGE)]
         public void FreeAttach()
         {
             if (HighLogic.LoadedSceneIsEditor)
             {
-                InputLockManager.SetControlLock(EditorLockMask, Config.Instance.EditorInputLockId);
+                InputLockManager.SetControlLock(EDITOR_LOCK_MASK, Config.Instance.EditorInputLockId);
                 var newPart = PartFactory.SpawnPartInEditor("ASTargetCube");
                 Debug.Log("[AS] spawned part in editor");
                 ActiveStrutsAddon.CurrentTargeter = this;
                 ActiveStrutsAddon.Mode = AddonMode.FreeAttach;
                 ActiveStrutsAddon.NewSpawnedPart = newPart;
             }
-            this.StraightOutAttachAppliedInEditor = false;
+            StraightOutAttachAppliedInEditor = false;
             if (Config.Instance.ShowHelpTexts)
             {
                 OSD.PostMessage(Config.Instance.FreeAttachHelpText, 5);
             }
             if (HighLogic.LoadedSceneIsFlight)
             {
-                this.StartCoroutine(this.PreparePartForFreeAttach());
+                StartCoroutine(PreparePartForFreeAttach());
             }
         }
 
-        [KSPEvent(name = "FreeAttachStraight", active = false, guiName = "Straight Up FreeAttach", guiActiveUnfocused = true, unfocusedRange = Config.UnfocusedRange)]
+        [KSPEvent(name = "FreeAttachStraight", active = false, guiName = "Straight Up FreeAttach",
+            guiActiveUnfocused = true, unfocusedRange = Config.UNFOCUSED_RANGE)]
         public void FreeAttachStraight()
         {
-            var raycast = this._performStraightOutRaycast();
+            var raycast = _performStraightOutRaycast();
             if (raycast.Item1)
             {
                 var hittedPart = raycast.Item2.PartFromHit();
@@ -556,22 +572,22 @@ namespace ActiveStruts.Modules
                 {
                     if (HighLogic.LoadedSceneIsEditor)
                     {
-                        this.StraightOutAttachAppliedInEditor = true;
-                        this.IsLinked = true;
-                        this.IsFreeAttached = true;
-                        this.UpdateGui();
-                        this._straightOutAttached = true;
+                        StraightOutAttachAppliedInEditor = true;
+                        IsLinked = true;
+                        IsFreeAttached = true;
+                        UpdateGui();
+                        straightOutAttached = true;
                         return;
                     }
-                    this.StraightOutAttachAppliedInEditor = false;
-                    this.IsLinked = false;
-                    this.IsFreeAttached = false;
-                    this._straightOutAttached = false;
+                    StraightOutAttachAppliedInEditor = false;
+                    IsLinked = false;
+                    IsFreeAttached = false;
+                    straightOutAttached = false;
                     if (HighLogic.LoadedSceneIsFlight)
                     {
                         //this.StartCoroutine(this.PreparePartForFreeAttach(true));
-                        this.PlaceFreeAttach(hittedPart);
-                        this._straightOutAttached = true;
+                        PlaceFreeAttach(hittedPart);
+                        straightOutAttached = true;
                     }
                 }
             }
@@ -584,21 +600,22 @@ namespace ActiveStruts.Modules
         [KSPAction("FreeAttachStraightAction", KSPActionGroup.None, guiName = "Straight Up FreeAttach")]
         public void FreeAttachStraightAction(KSPActionParam param)
         {
-            if (this.Mode == Mode.Unlinked && !this.IsTargetOnly)
+            if (Mode == Mode.Unlinked && !IsTargetOnly)
             {
-                this.FreeAttachStraight();
+                FreeAttachStraight();
             }
         }
 
-        [KSPEvent(name = "Link", active = false, guiName = "Link", guiActiveEditor = false, guiActiveUnfocused = true, unfocusedRange = Config.UnfocusedRange)]
+        [KSPEvent(name = "Link", active = false, guiName = "Link", guiActiveEditor = false, guiActiveUnfocused = true,
+            unfocusedRange = Config.UNFOCUSED_RANGE)]
         public void Link()
         {
-            this.StraightOutAttachAppliedInEditor = false;
+            StraightOutAttachAppliedInEditor = false;
             if (HighLogic.LoadedSceneIsEditor)
             {
-                InputLockManager.SetControlLock(EditorLockMask, Config.Instance.EditorInputLockId);
+                InputLockManager.SetControlLock(EDITOR_LOCK_MASK, Config.Instance.EditorInputLockId);
             }
-            this.Mode = Mode.Targeting;
+            Mode = Mode.Targeting;
             foreach (var possibleTarget in this.GetAllPossibleTargets())
             {
                 possibleTarget.SetTargetedBy(this);
@@ -606,7 +623,7 @@ namespace ActiveStruts.Modules
             }
             ActiveStrutsAddon.Mode = AddonMode.Link;
             ActiveStrutsAddon.CurrentTargeter = this;
-            if (this.IsFlexible)
+            if (IsFlexible)
             {
                 ActiveStrutsAddon.FlexibleAttachActive = true;
             }
@@ -614,134 +631,138 @@ namespace ActiveStruts.Modules
             {
                 OSD.PostMessage(Config.Instance.LinkHelpText, 5);
             }
-            this.UpdateGui();
-            this.DeployHead(NormalAniSpeed);
+            UpdateGui();
+            DeployHead(NORMAL_ANI_SPEED);
         }
 
         public void OnJointBreak(float breakForce)
         {
             try
             {
-                this._partJoint.DestroyJoint();
-                this.part.attachNodes.Remove(this._jointAttachNode);
-                this._jointAttachNode.owner = null;
+                partJoint.DestroyJoint();
+                part.attachNodes.Remove(jointAttachNode);
+                jointAttachNode.owner = null;
             }
             catch (NullReferenceException)
             {
                 //already destroyed
             }
-            this._jointBroken = true;
-            this.PlayBreakSound();
+            jointBroken = true;
+            PlayBreakSound();
             OSD.PostMessage("Joint broken!");
         }
 
         public override void OnStart(StartState state)
         {
-            this._findModelFeatures();
-            if (this.ModelFeatures[ModelFeaturesType.SimpleLights])
+            _findModelFeatures();
+            if (ModelFeatures[ModelFeaturesType.SimpleLights])
             {
-                this._updateSimpleLights();
+                UpdateSimpleLights();
             }
-            if (this.ModelFeatures[ModelFeaturesType.Animation])
+            if (ModelFeatures[ModelFeaturesType.Animation])
             {
-                if (this.AniExtended)
+                if (AniExtended)
                 {
-                    this.DeployHead(FastAniSpeed);
+                    DeployHead(FAST_ANI_SPEED);
                 }
                 else
                 {
-                    this.RetractHead(FastAniSpeed);
+                    RetractHead(FAST_ANI_SPEED);
                 }
             }
-            if (!this.IsFlexible)
+            if (!IsFlexible)
             {
-                if (!this.IsTargetOnly)
+                if (!IsTargetOnly)
                 {
-                    if (this.ModelFeatures[ModelFeaturesType.LightsBright] || this.ModelFeatures[ModelFeaturesType.LightsDull])
+                    if (ModelFeatures[ModelFeaturesType.LightsBright] || ModelFeatures[ModelFeaturesType.LightsDull])
                     {
-                        this.LightsOffset *= 0.5f;
+                        LightsOffset *= 0.5f;
                     }
-                    if (this.ModelFeatures[ModelFeaturesType.Strut])
+                    if (ModelFeatures[ModelFeaturesType.Strut])
                     {
-                        this.DestroyStrut();
+                        DestroyStrut();
                     }
                 }
             }
             if (HighLogic.LoadedSceneIsEditor)
             {
-                this.part.OnEditorAttach += this.ProcessOnPartCopy;
+                part.OnEditorAttach += ProcessOnPartCopy;
             }
-            this.Origin = this.part.transform;
-            this._delayedStartFlag = true;
-            this._ticksForDelayedStart = HighLogic.LoadedSceneIsEditor ? 0 : Config.Instance.StartDelay;
-            this._strutRealignCounter = Config.Instance.StrutRealignInterval*(HighLogic.LoadedSceneIsEditor ? 3 : 0);
-            if (this.SoundAttach == null || this.SoundBreak == null || this.SoundDetach == null ||
+            Origin = part.transform;
+            delayedStartFlag = true;
+            ticksForDelayedStart = HighLogic.LoadedSceneIsEditor ? 0 : Config.Instance.StartDelay;
+            strutRealignCounter = Config.Instance.StrutRealignInterval*(HighLogic.LoadedSceneIsEditor ? 3 : 0);
+            if (SoundAttach == null || SoundBreak == null || SoundDetach == null ||
                 !GameDatabase.Instance.ExistsAudioClip(Config.Instance.SoundAttachFileUrl) ||
                 !GameDatabase.Instance.ExistsAudioClip(Config.Instance.SoundDetachFileUrl) ||
                 !GameDatabase.Instance.ExistsAudioClip(Config.Instance.SoundBreakFileUrl))
             {
-                Debug.Log("[AS] sounds cannot be loaded." + (this.SoundAttach == null ? "FXGroup not instantiated" : "sound file not found"));
-                this._soundFlag = false;
+                Debug.Log("[AS] sounds cannot be loaded." +
+                          (SoundAttach == null ? "FXGroup not instantiated" : "sound file not found"));
+                soundFlag = false;
             }
             else
             {
-                SetupFxGroup(this.SoundAttach, this.gameObject, Config.Instance.SoundAttachFileUrl);
-                SetupFxGroup(this.SoundDetach, this.gameObject, Config.Instance.SoundDetachFileUrl);
-                SetupFxGroup(this.SoundBreak, this.gameObject, Config.Instance.SoundBreakFileUrl);
-                this._soundFlag = true;
+                SetupFxGroup(SoundAttach, gameObject, Config.Instance.SoundAttachFileUrl);
+                SetupFxGroup(SoundDetach, gameObject, Config.Instance.SoundDetachFileUrl);
+                SetupFxGroup(SoundBreak, gameObject, Config.Instance.SoundBreakFileUrl);
+                soundFlag = true;
             }
-            this._initialized = true;
+            initialized = true;
         }
 
         public void PlaceFreeAttach(Part targetPart)
         {
-            lock (this._freeAttachStrutUpdateLock)
+            lock (freeAttachStrutUpdateLock)
             {
-                this._oldTargetPosition = Vector3.zero;
+                oldTargetPosition = Vector3.zero;
                 ActiveStrutsAddon.Mode = AddonMode.None;
-                var target = targetPart.Modules[Config.Instance.ModuleActiveStrutFreeAttachTarget] as ModuleActiveStrutFreeAttachTarget;
+                var target =
+                    targetPart.Modules[Config.Instance.ModuleActiveStrutFreeAttachTarget] as
+                        ModuleActiveStrutFreeAttachTarget;
                 if (target != null)
                 {
-                    this.FreeAttachTarget = target;
+                    FreeAttachTarget = target;
                     target.Targeter = this;
-                    Debug.Log("[AS] connected to targetpart with ID: " + this.FreeAttachTarget.ID);
+                    Debug.Log("[AS] connected to targetpart with ID: " + FreeAttachTarget.ID);
                     if (HighLogic.LoadedSceneIsFlight && target.vessel != null)
                     {
-                        this.IsOwnVesselConnected = target.vessel == this.vessel;
+                        IsOwnVesselConnected = target.vessel == vessel;
                     }
                     else if (HighLogic.LoadedSceneIsEditor)
                     {
-                        this.IsOwnVesselConnected = true;
+                        IsOwnVesselConnected = true;
                     }
                 }
-                this._freeAttachPart = targetPart;
-                this.Mode = Mode.Linked;
-                this.IsLinked = true;
-                this.IsFreeAttached = true;
-                this.IsConnectionOrigin = true;
-                this.DestroyJoint();
-                this.DestroyStrut();
-                this.IsEnforced = Config.Instance.GlobalJointEnforcement;
+                freeAttachPart = targetPart;
+                Mode = Mode.Linked;
+                IsLinked = true;
+                IsFreeAttached = true;
+                IsConnectionOrigin = true;
+                DestroyJoint();
+                DestroyStrut();
+                IsEnforced = Config.Instance.GlobalJointEnforcement;
                 if (HighLogic.LoadedSceneIsFlight)
                 {
-                    this.CreateJoint(this.part.Rigidbody, this.IsFreeAttached ? targetPart.parent.Rigidbody : targetPart.Rigidbody, LinkType.Weak, targetPart.transform.position);
+                    CreateJoint(part.Rigidbody, IsFreeAttached ? targetPart.parent.Rigidbody : targetPart.Rigidbody,
+                        LinkType.Weak, targetPart.transform.position);
                 }
-                this.Target = null;
-                this.Targeter = null;
-                this.DeployHead(NormalAniSpeed);
+                Target = null;
+                Targeter = null;
+                DeployHead(NORMAL_ANI_SPEED);
                 OSD.PostMessage("FreeAttach Link established!");
             }
-            this.UpdateGui();
+            UpdateGui();
         }
 
         public void PlayAttachSound()
         {
-            this.PlayAudio(this.SoundAttach);
+            PlayAudio(SoundAttach);
         }
 
         private void PlayAudio(FXGroup group)
         {
-            if (!this._soundFlag || group == null || group.audio == null)
+            if (!soundFlag || group == null || group.audio == null)
             {
                 return;
             }
@@ -750,50 +771,51 @@ namespace ActiveStruts.Modules
 
         public void PlayBreakSound()
         {
-            this.PlayAudio(this.SoundBreak);
+            PlayAudio(SoundBreak);
         }
 
         private void PlayDeployAnimation(float speed)
         {
-            if (!this.ModelFeatures[ModelFeaturesType.Animation])
+            if (!ModelFeatures[ModelFeaturesType.Animation])
             {
                 return;
             }
-            var ani = this.DeployAnimation;
+            var ani = DeployAnimation;
             if (ani == null)
             {
                 Debug.Log("[AS] animation is null!");
                 return;
             }
-            if (this.IsAnimationPlaying)
+            if (IsAnimationPlaying)
             {
-                ani.Stop(this.AnimationName);
+                ani.Stop(AnimationName);
             }
-            if (!this.AniExtended)
+            if (!AniExtended)
             {
                 speed *= -1;
             }
             if (speed < 0)
             {
-                ani[this.AnimationName].time = ani[this.AnimationName].length;
+                ani[AnimationName].time = ani[AnimationName].length;
             }
-            ani[this.AnimationName].speed = speed;
-            ani.Play(this.AnimationName);
+            ani[AnimationName].speed = speed;
+            ani.Play(AnimationName);
         }
 
         public void PlayDetachSound()
         {
-            this.PlayAudio(this.SoundDetach);
+            PlayAudio(SoundDetach);
         }
 
         private IEnumerator PreparePartForFreeAttach(bool straightOut = false, int tryCount = 0)
         {
-            const int maxWaits = 30;
-            const int maxTries = 5;
+            const int MAX_WAITS = 30;
+            const int MAX_TRIES = 5;
             var currWaits = 0;
-            var newPart = PartFactory.SpawnPartInFlight("ASTargetCube", this.part, new Vector3(2, 2, 2), this.part.transform.rotation);
+            var newPart = PartFactory.SpawnPartInFlight("ASTargetCube", part, new Vector3(2, 2, 2),
+                part.transform.rotation);
             OSD.PostMessageLowerRightCorner("waiting for Unity to catch up...", 1.5f);
-            while (!newPart.rigidbody && currWaits < maxWaits && newPart.vessel != null)
+            while (!newPart.rigidbody && currWaits < MAX_WAITS && newPart.vessel != null)
             {
                 Debug.Log("[AS] rigidbody not ready - waiting");
                 currWaits++;
@@ -807,7 +829,7 @@ namespace ActiveStruts.Modules
                 }
                 try
                 {
-                    newPart.transform.position = this.part.transform.position;
+                    newPart.transform.position = part.transform.position;
                 }
                 catch (NullReferenceException)
                 {
@@ -825,25 +847,31 @@ namespace ActiveStruts.Modules
                 }
                 yield return new WaitForFixedUpdate();
             }
-            if (newPart.vessel == null || (maxWaits == currWaits && newPart.rigidbody == null))
+            if (newPart.vessel == null || (MAX_WAITS == currWaits && newPart.rigidbody == null))
             {
-                if (tryCount < maxTries)
+                if (tryCount < MAX_TRIES)
                 {
                     var nextTryCount = ++tryCount;
-                    Debug.Log(string.Format("[AS] part spawning failed => retry (vessel is null = {0} | waits = {1}/{2})", (newPart.vessel == null), currWaits, maxWaits));
-                    this.StartCoroutine(this.PreparePartForFreeAttach(straightOut, nextTryCount));
+                    Debug.Log(
+                        string.Format("[AS] part spawning failed => retry (vessel is null = {0} | waits = {1}/{2})",
+                            (newPart.vessel == null), currWaits, MAX_WAITS));
+                    StartCoroutine(PreparePartForFreeAttach(straightOut, nextTryCount));
                 }
                 else
                 {
-                    Debug.Log(string.Format("[AS] part spawning failed more than {3} times => aborting FreeAttach (vessel is null = {0} | waits = {1}/{2})", (newPart.vessel == null), currWaits, maxWaits, maxTries));
+                    Debug.Log(
+                        string.Format(
+                            "[AS] part spawning failed more than {3} times => aborting FreeAttach (vessel is null = {0} | waits = {1}/{2})",
+                            (newPart.vessel == null), currWaits, MAX_WAITS, MAX_TRIES));
                     OSD.PostMessage("FreeAttach failed because target part can not be prepared!");
                     try
                     {
-                        this.AbortLink();
+                        AbortLink();
                     }
                     catch (NullReferenceException e)
                     {
-                        Debug.Log("[AS] tried to abort link because part spawning failed, but abort throw exception: " + e.Message);
+                        Debug.Log("[AS] tried to abort link because part spawning failed, but abort throw exception: " +
+                                  e.Message);
                     }
                 }
                 try
@@ -853,7 +881,9 @@ namespace ActiveStruts.Modules
                 }
                 catch (Exception e)
                 {
-                    Debug.Log("[AS] tried to destroy a part which failed to spawn properly in time, but operation throw exception: " + e.Message);
+                    Debug.Log(
+                        "[AS] tried to destroy a part which failed to spawn properly in time, but operation throw exception: " +
+                        e.Message);
                 }
                 yield break;
             }
@@ -862,7 +892,7 @@ namespace ActiveStruts.Modules
             newPart.minimum_drag = 0f;
             if (straightOut)
             {
-                this._continueWithStraightOutAttach(newPart);
+                _continueWithStraightOutAttach(newPart);
             }
             else
             {
@@ -875,75 +905,76 @@ namespace ActiveStruts.Modules
         public void ProcessOnPartCopy()
         {
             var allModules = Utilities.GetAllActiveStruts();
-            if (allModules != null && allModules.Any(m => m.ID == this.ID))
+            if (allModules != null && allModules.Any(m => m.ID == ID))
             {
-                this.ResetActiveStrutToDefault();
+                ResetActiveStrutToDefault();
             }
             else
             {
-                this.Unlink();
-                this.Update();
+                Unlink();
+                Update();
             }
         }
 
         private void ProcessUnDock(bool undockByUnlink = false)
         {
-            if (HighLogic.LoadedSceneIsEditor || (!this.IsLinked && !undockByUnlink) || !this.IsConnectionOrigin || this.IsTargetOnly || (this.IsOwnVesselConnected && !this.IsDocked) ||
-                (this.IsFreeAttached ? this.FreeAttachPart == null : this.Target == null) ||
-                !this.IsDocked)
+            if (HighLogic.LoadedSceneIsEditor || (!IsLinked && !undockByUnlink) || !IsConnectionOrigin || IsTargetOnly ||
+                (IsOwnVesselConnected && !IsDocked) ||
+                (IsFreeAttached ? FreeAttachPart == null : Target == null) ||
+                !IsDocked)
             {
                 OSD.PostMessage("Can't undock");
                 return;
             }
             var vi = new DockedVesselInfo
-                     {
-                         name = this.DockingVesselName,
-                         rootPartUId = this.DockingVesselId,
-                         vesselType = (VesselType) Enum.Parse(typeof(VesselType), this.DockingVesselTypeString)
-                     };
-            this.IsDocked = false;
-            if (this.IsFreeAttached)
             {
-                this.FreeAttachPart.Undock(vi);
+                name = DockingVesselName,
+                rootPartUId = DockingVesselId,
+                vesselType = (VesselType) Enum.Parse(typeof (VesselType), DockingVesselTypeString)
+            };
+            IsDocked = false;
+            if (IsFreeAttached)
+            {
+                FreeAttachPart.Undock(vi);
             }
             else
             {
-                this.Target.part.Undock(vi);
+                Target.part.Undock(vi);
             }
-            this.UpdateGui();
+            UpdateGui();
             OSD.PostMessage("Undocked");
         }
 
         public void ProcessUnlink(bool fromUserAction, bool secondary)
         {
-            this.StraightOutAttachAppliedInEditor = false;
-            this._straightOutAttached = false;
-            if (this.AniExtended)
+            StraightOutAttachAppliedInEditor = false;
+            straightOutAttached = false;
+            if (AniExtended)
             {
-                this.RetractHead(NormalAniSpeed);
+                RetractHead(NORMAL_ANI_SPEED);
             }
-            if (this.IsFlexible)
+            if (IsFlexible)
             {
-                if (this._flexFakeSlingLocal != null)
+                if (flexFakeSlingLocal != null)
                 {
-                    DestroyImmediate(this._flexFakeSlingLocal);
+                    DestroyImmediate(flexFakeSlingLocal);
                 }
-                if (this._flexFakeSlingTarget != null)
+                if (flexFakeSlingTarget != null)
                 {
-                    DestroyImmediate(this._flexFakeSlingTarget);
+                    DestroyImmediate(flexFakeSlingTarget);
                 }
-                if (this._flexStrut != null)
+                if (flexStrut != null)
                 {
-                    DestroyImmediate(this._flexStrut);
+                    DestroyImmediate(flexStrut);
                 }
             }
-            if (!this.IsTargetOnly && (this.Target != null || this.Targeter != null))
+            if (!IsTargetOnly && (Target != null || Targeter != null))
             {
-                if (!this.IsConnectionOrigin && !secondary && this.Targeter != null)
+                if (!IsConnectionOrigin && !secondary && Targeter != null)
                 {
                     try
                     {
-                        this.Targeter.Unlink();
+                        Targeter.Unlink();
                     }
                     catch (NullReferenceException)
                     {
@@ -951,27 +982,27 @@ namespace ActiveStruts.Modules
                     }
                     return;
                 }
-                if (this.IsFreeAttached)
+                if (IsFreeAttached)
                 {
-                    this.IsFreeAttached = false;
+                    IsFreeAttached = false;
                 }
-                this.Mode = Mode.Unlinked;
-                this.IsLinked = false;
-                this.DestroyJoint();
-                this.DestroyStrut();
-                this._oldTargetPosition = Vector3.zero;
-                this.LinkType = LinkType.None;
-                if (this.IsConnectionOrigin)
+                Mode = Mode.Unlinked;
+                IsLinked = false;
+                DestroyJoint();
+                DestroyStrut();
+                oldTargetPosition = Vector3.zero;
+                LinkType = LinkType.None;
+                if (IsConnectionOrigin)
                 {
-                    if (this.Target != null)
+                    if (Target != null)
                     {
                         try
                         {
-                            this.Target.ProcessUnlink(false, true);
+                            Target.ProcessUnlink(false, true);
                             if (HighLogic.LoadedSceneIsEditor)
                             {
-                                this.Target.Targeter = null;
-                                this.Target = null;
+                                Target.Targeter = null;
+                                Target = null;
                             }
                         }
                         catch (NullReferenceException)
@@ -982,89 +1013,94 @@ namespace ActiveStruts.Modules
                     if (!fromUserAction && HighLogic.LoadedSceneIsEditor)
                     {
                         OSD.PostMessage("Unlinked!");
-                        this.PlayDetachSound();
+                        PlayDetachSound();
                     }
                 }
-                this.IsConnectionOrigin = false;
-                this.UpdateGui();
+                IsConnectionOrigin = false;
+                UpdateGui();
                 return;
             }
-            if (this.IsTargetOnly)
+            if (IsTargetOnly)
             {
                 if (!this.AnyTargetersConnected())
                 {
-                    this.Mode = Mode.Unlinked;
-                    this.IsLinked = false;
+                    Mode = Mode.Unlinked;
+                    IsLinked = false;
                 }
-                this.UpdateGui();
+                UpdateGui();
                 return;
             }
-            var targetPart = this.FreeAttachTarget;
+            var targetPart = FreeAttachTarget;
             var destroyTarget = false;
-            if (this.IsFreeAttached)
+            if (IsFreeAttached)
             {
-                this.IsFreeAttached = false;
+                IsFreeAttached = false;
                 destroyTarget = true;
             }
-            this._oldTargetPosition = Vector3.zero;
-            this.FreeAttachTarget = null;
-            this.Mode = Mode.Unlinked;
-            this.IsLinked = false;
-            this.DestroyStrut();
-            this.DestroyJoint();
+            oldTargetPosition = Vector3.zero;
+            FreeAttachTarget = null;
+            Mode = Mode.Unlinked;
+            IsLinked = false;
+            DestroyStrut();
+            DestroyJoint();
             if (destroyTarget && targetPart != null)
             {
                 targetPart.Die();
             }
-            this.LinkType = LinkType.None;
-            this.UpdateGui();
+            LinkType = LinkType.None;
+            UpdateGui();
             if (!fromUserAction && HighLogic.LoadedSceneIsEditor)
             {
                 OSD.PostMessage("Unlinked!");
-                this.PlayDetachSound();
+                PlayDetachSound();
             }
         }
 
         private void Reconnect()
         {
-            if (this.StraightOutAttachAppliedInEditor)
+            if (StraightOutAttachAppliedInEditor)
             {
-                this.FreeAttachStraight();
+                FreeAttachStraight();
                 return;
             }
-            if (this.IsFreeAttached)
+            if (IsFreeAttached)
             {
-                if (this.FreeAttachTarget != null)
+                if (FreeAttachTarget != null)
                 {
-                    this.PlaceFreeAttach(this.FreeAttachPart);
+                    PlaceFreeAttach(FreeAttachPart);
                     return;
                 }
-                this.IsFreeAttached = false;
-                this.Mode = Mode.Unlinked;
-                this.IsConnectionOrigin = false;
-                this.LinkType = LinkType.None;
-                this.UpdateGui();
+                IsFreeAttached = false;
+                Mode = Mode.Unlinked;
+                IsConnectionOrigin = false;
+                LinkType = LinkType.None;
+                UpdateGui();
                 return;
             }
             var unlink = false;
-            if (this.IsConnectionOrigin)
+            if (IsConnectionOrigin)
             {
-                if (this.Target != null && this.IsPossibleTarget(this.Target))
+                if (Target != null && this.IsPossibleTarget(Target))
                 {
-                    if (!this.Target.IsTargetOnly)
+                    if (!Target.IsTargetOnly)
                     {
-                        this.CreateStrut(this.Target.ModelFeatures[ModelFeaturesType.HeadExtension] ? this.Target.StrutOrigin.position : this.Target.Origin.position, 0.5f);
+                        CreateStrut(
+                            Target.ModelFeatures[ModelFeaturesType.HeadExtension]
+                                ? Target.StrutOrigin.position
+                                : Target.Origin.position, 0.5f);
                     }
                     else
                     {
-                        this.CreateStrut(this.Target.ModelFeatures[ModelFeaturesType.HeadExtension] ? this.Target.StrutOrigin.position : this.Target.Origin.position);
+                        CreateStrut(Target.ModelFeatures[ModelFeaturesType.HeadExtension]
+                            ? Target.StrutOrigin.position
+                            : Target.Origin.position);
                     }
-                    var type = this.IsFlexible ? LinkType.Flexible : this.Target.IsTargetOnly ? LinkType.Normal : LinkType.Maximum;
-                    this.IsEnforced = Config.Instance.GlobalJointEnforcement || type == LinkType.Maximum;
-                    this.CreateJoint(this.part.rigidbody, this.Target.part.parent.rigidbody, type, this.Target.transform.position);
-                    this.Mode = Mode.Linked;
-                    this.Target.Mode = Mode.Linked;
-                    this.IsLinked = true;
+                    var type = IsFlexible ? LinkType.Flexible : Target.IsTargetOnly ? LinkType.Normal : LinkType.Maximum;
+                    IsEnforced = Config.Instance.GlobalJointEnforcement || type == LinkType.Maximum;
+                    CreateJoint(part.rigidbody, Target.part.parent.rigidbody, type, Target.transform.position);
+                    Mode = Mode.Linked;
+                    Target.Mode = Mode.Linked;
+                    IsLinked = true;
                 }
                 else
                 {
@@ -1073,24 +1109,27 @@ namespace ActiveStruts.Modules
             }
             else
             {
-                if (this.IsTargetOnly)
+                if (IsTargetOnly)
                 {
-                    this.Mode = Mode.Linked;
-                    this.IsLinked = true;
+                    Mode = Mode.Linked;
+                    IsLinked = true;
                 }
-                else if (this.Targeter != null && this.IsPossibleTarget(this.Targeter))
+                else if (Targeter != null && this.IsPossibleTarget(Targeter))
                 {
-                    if (!this.IsFlexible)
+                    if (!IsFlexible)
                     {
-                        this.CreateStrut(this.Targeter.ModelFeatures[ModelFeaturesType.HeadExtension] ? this.Targeter.StrutOrigin.position : this.Targeter.Origin.position, 0.5f);
-                        this.LinkType = LinkType.Maximum;
+                        CreateStrut(
+                            Targeter.ModelFeatures[ModelFeaturesType.HeadExtension]
+                                ? Targeter.StrutOrigin.position
+                                : Targeter.Origin.position, 0.5f);
+                        LinkType = LinkType.Maximum;
                     }
                     else
                     {
-                        this.LinkType = LinkType.Flexible;
+                        LinkType = LinkType.Flexible;
                     }
-                    this.Mode = Mode.Linked;
-                    this.IsLinked = true;
+                    Mode = Mode.Linked;
+                    IsLinked = true;
                 }
                 else
                 {
@@ -1099,83 +1138,90 @@ namespace ActiveStruts.Modules
             }
             if (unlink)
             {
-                this.Unlink();
+                Unlink();
             }
-            this.UpdateGui();
+            UpdateGui();
         }
 
         private void ResetActiveStrutToDefault()
         {
-            this.Target = null;
-            this.Targeter = null;
-            this.IsConnectionOrigin = false;
-            this.IsFreeAttached = false;
-            this.Mode = Mode.Unlinked;
-            this.IsHalfWayExtended = false;
-            this.Id = Guid.NewGuid().ToString();
-            this.LinkType = LinkType.None;
-            this.OldTargeter = null;
-            this.FreeAttachTarget = null;
-            this.IsFreeAttached = false;
-            this.IsLinked = false;
-            if (!this.IsTargetOnly)
+            Target = null;
+            Targeter = null;
+            IsConnectionOrigin = false;
+            IsFreeAttached = false;
+            Mode = Mode.Unlinked;
+            IsHalfWayExtended = false;
+            Id = Guid.NewGuid().ToString();
+            LinkType = LinkType.None;
+            OldTargeter = null;
+            FreeAttachTarget = null;
+            IsFreeAttached = false;
+            IsLinked = false;
+            if (!IsTargetOnly)
             {
-                this.DestroyJoint();
-                this.DestroyStrut();
+                DestroyJoint();
+                DestroyStrut();
             }
         }
 
         private void RetractHead(float speed)
         {
-            this.AniExtended = false;
-            this.PlayDeployAnimation(speed);
+            AniExtended = false;
+            PlayDeployAnimation(speed);
         }
 
-        [KSPEvent(name = "SetAsTarget", active = false, guiName = "Set as Target", guiActiveEditor = false, guiActiveUnfocused = true, unfocusedRange = Config.UnfocusedRange)]
+        [KSPEvent(name = "SetAsTarget", active = false, guiName = "Set as Target", guiActiveEditor = false,
+            guiActiveUnfocused = true, unfocusedRange = Config.UNFOCUSED_RANGE)]
         public void SetAsTarget()
         {
-            this.IsLinked = true;
-            this.part.SetHighlightDefault();
-            this.Mode = Mode.Linked;
-            this.IsConnectionOrigin = false;
-            this.IsFreeAttached = false;
-            if (!this.IsTargetOnly && !this.IsFlexible)
+            IsLinked = true;
+            part.SetHighlightDefault();
+            Mode = Mode.Linked;
+            IsConnectionOrigin = false;
+            IsFreeAttached = false;
+            if (!IsTargetOnly && !IsFlexible)
             {
-                if (this.ModelFeatures[ModelFeaturesType.Animation])
+                if (ModelFeatures[ModelFeaturesType.Animation])
                 {
-                    this.DeployHead(NormalAniSpeed);
+                    DeployHead(NORMAL_ANI_SPEED);
                 }
-                this.CreateStrut(this.Targeter.ModelFeatures[ModelFeaturesType.HeadExtension] ? this.Targeter.StrutOrigin.position : this.Targeter.Origin.position, 0.5f);
+                CreateStrut(
+                    Targeter.ModelFeatures[ModelFeaturesType.HeadExtension]
+                        ? Targeter.StrutOrigin.position
+                        : Targeter.Origin.position, 0.5f);
             }
-            this.Targeter.SetTarget(this);
-            this.UpdateGui();
+            Targeter.SetTarget(this);
+            UpdateGui();
         }
 
         public void SetTarget(ModuleActiveStrut target)
         {
-            if (this.ModelFeatures[ModelFeaturesType.Animation] && !this.AniExtended)
+            if (ModelFeatures[ModelFeaturesType.Animation] && !AniExtended)
             {
-                this.DeployHead(NormalAniSpeed);
+                DeployHead(NORMAL_ANI_SPEED);
             }
-            this.Target = target;
-            this.Mode = Mode.Linked;
-            this.IsLinked = true;
-            this.IsConnectionOrigin = true;
-            var type = this.IsFlexible ? LinkType.Flexible : target.IsTargetOnly ? LinkType.Normal : LinkType.Maximum;
-            this.IsEnforced = !this.IsFlexible && (Config.Instance.GlobalJointEnforcement || type == LinkType.Maximum);
-            this.CreateJoint(this.part.rigidbody, target.part.parent.rigidbody, type, this.Target.transform.position);
-            this.CreateStrut(target.ModelFeatures[ModelFeaturesType.HeadExtension] ? target.StrutOrigin.position : target.Origin.position, target.IsTargetOnly ? 1 : 0.5f);
+            Target = target;
+            Mode = Mode.Linked;
+            IsLinked = true;
+            IsConnectionOrigin = true;
+            var type = IsFlexible ? LinkType.Flexible : target.IsTargetOnly ? LinkType.Normal : LinkType.Maximum;
+            IsEnforced = !IsFlexible && (Config.Instance.GlobalJointEnforcement || type == LinkType.Maximum);
+            CreateJoint(part.rigidbody, target.part.parent.rigidbody, type, Target.transform.position);
+            CreateStrut(
+                target.ModelFeatures[ModelFeaturesType.HeadExtension]
+                    ? target.StrutOrigin.position
+                    : target.Origin.position, target.IsTargetOnly ? 1 : 0.5f);
             Utilities.ResetAllFromTargeting();
             OSD.PostMessage("Link established!");
             ActiveStrutsAddon.Mode = AddonMode.None;
-            this.UpdateGui();
+            UpdateGui();
         }
 
         public void SetTargetedBy(ModuleActiveStrut targeter)
         {
-            this.OldTargeter = this.Targeter;
-            this.Targeter = targeter;
-            this.Mode = Mode.Target;
+            OldTargeter = Targeter;
+            Targeter = targeter;
+            Mode = Mode.Target;
         }
 
         private static void SetupFxGroup(FXGroup group, GameObject gameObject, string audioFileUrl)
@@ -1190,122 +1236,131 @@ namespace ActiveStruts.Modules
             group.audio.volume = GameSettings.SHIP_VOLUME;
         }
 
-        public void ShowGrappler(bool show, Vector3 targetPos, Vector3 lookAtPoint, bool applyOffset, Vector3 targetNormalVector, bool useNormalVector = false, bool inverseOffset = false)
+        public void ShowGrappler(bool show, Vector3 targetPos, Vector3 lookAtPoint, bool applyOffset,
+            Vector3 targetNormalVector, bool useNormalVector = false, bool inverseOffset = false)
         {
-            if (!this.ModelFeatures[ModelFeaturesType.Grappler])
+            if (!ModelFeatures[ModelFeaturesType.Grappler])
             {
                 return;
             }
-            if (show && !this.IsTargetOnly)
+            if (show && !IsTargetOnly)
             {
-                this.Grappler.localScale = new Vector3(1, 1, 1);
-                this.Grappler.position = this.Origin.position;
-                this.Grappler.LookAt(lookAtPoint);
-                this.Grappler.position = targetPos;
-                this.Grappler.Rotate(new Vector3(0, 1, 0), 90f);
+                Grappler.localScale = new Vector3(1, 1, 1);
+                Grappler.position = Origin.position;
+                Grappler.LookAt(lookAtPoint);
+                Grappler.position = targetPos;
+                Grappler.Rotate(new Vector3(0, 1, 0), 90f);
                 if (useNormalVector)
                 {
-                    this.Grappler.rotation = Quaternion.FromToRotation(this.Grappler.right, targetNormalVector)*this.Grappler.rotation;
+                    Grappler.rotation = Quaternion.FromToRotation(Grappler.right, targetNormalVector)*Grappler.rotation;
                 }
                 if (applyOffset)
                 {
-                    var offset = inverseOffset ? -1*this.GrapplerOffset : this.GrapplerOffset;
-                    this.Grappler.Translate(new Vector3(offset, 0, 0));
+                    var offset = inverseOffset ? -1*GrapplerOffset : GrapplerOffset;
+                    Grappler.Translate(new Vector3(offset, 0, 0));
                 }
             }
             if (!show)
             {
-                this.Grappler.localScale = Vector3.zero;
+                Grappler.localScale = Vector3.zero;
             }
         }
 
         public void ShowHooks(bool show, Vector3 targetPos, Vector3 targetNormalVector, bool useNormalVector = false)
         {
-            if (!this.ModelFeatures[ModelFeaturesType.Hooks])
+            if (!ModelFeatures[ModelFeaturesType.Hooks])
             {
                 return;
             }
-            if (show && !this.IsTargetOnly)
+            if (show && !IsTargetOnly)
             {
-                this.Hooks.localScale = new Vector3(1, 1, 1)*this.HooksScaleFactor;
-                this.Hooks.LookAt(targetPos);
-                this.Hooks.position = targetPos;
+                Hooks.localScale = new Vector3(1, 1, 1)*HooksScaleFactor;
+                Hooks.LookAt(targetPos);
+                Hooks.position = targetPos;
                 if (useNormalVector)
                 {
-                    this.Hooks.rotation = Quaternion.FromToRotation(this._featureOrientation[ModelFeaturesType.Hooks].GetAxis(this.Hooks), targetNormalVector)*this.Hooks.rotation;
+                    Hooks.rotation =
+                        Quaternion.FromToRotation(featureOrientation[ModelFeaturesType.Hooks].GetAxis(Hooks),
+                            targetNormalVector)*Hooks.rotation;
                 }
             }
             if (!show)
             {
-                this.Hooks.localScale = Vector3.zero;
+                Hooks.localScale = Vector3.zero;
             }
         }
 
         [KSPEvent(name = "ToggleEnforcement", active = false, guiName = "Toggle Enforcement", guiActiveEditor = false)]
         public void ToggleEnforcement()
         {
-            if (!this.IsLinked || !this.IsConnectionOrigin)
+            if (!IsLinked || !IsConnectionOrigin)
             {
                 return;
             }
-            this.IsEnforced = !this.IsEnforced;
-            this.DestroyJoint();
-            if (!this.IsFreeAttached)
+            IsEnforced = !IsEnforced;
+            DestroyJoint();
+            if (!IsFreeAttached)
             {
-                this.CreateJoint(this.part.rigidbody, this.Target.part.parent.rigidbody, this.LinkType, this.Target.transform.position);
+                CreateJoint(part.rigidbody, Target.part.parent.rigidbody, LinkType, Target.transform.position);
             }
             else
             {
-                var rayRes = Utilities.PerformRaycast(this.Origin.position, this.FreeAttachTarget.PartOrigin.position, this.RealModelForward);
+                var rayRes = Utilities.PerformRaycast(Origin.position, FreeAttachTarget.PartOrigin.position,
+                    RealModelForward);
                 if (rayRes.HittedPart != null && rayRes.DistanceFromOrigin <= Config.Instance.MaxDistance)
                 {
-                    var moduleActiveStrutFreeAttachTarget = rayRes.HittedPart.Modules[Config.Instance.ModuleActiveStrutFreeAttachTarget] as ModuleActiveStrutFreeAttachTarget;
+                    var moduleActiveStrutFreeAttachTarget =
+                        rayRes.HittedPart.Modules[Config.Instance.ModuleActiveStrutFreeAttachTarget] as
+                            ModuleActiveStrutFreeAttachTarget;
                     if (moduleActiveStrutFreeAttachTarget != null)
                     {
-                        this.CreateJoint(this.part.rigidbody, moduleActiveStrutFreeAttachTarget.PartRigidbody, LinkType.Weak, (rayRes.Hit.point + this.Origin.position)/2);
+                        CreateJoint(part.rigidbody, moduleActiveStrutFreeAttachTarget.PartRigidbody, LinkType.Weak,
+                            (rayRes.Hit.point + Origin.position)/2);
                     }
                 }
             }
             OSD.PostMessage("Joint enforcement temporarily changed.");
-            this.UpdateGui();
+            UpdateGui();
         }
 
-        [KSPEvent(name = "ToggleLink", active = false, guiName = "Toggle Link", guiActiveUnfocused = true, unfocusedRange = Config.UnfocusedRange)]
+        [KSPEvent(name = "ToggleLink", active = false, guiName = "Toggle Link", guiActiveUnfocused = true,
+            unfocusedRange = Config.UNFOCUSED_RANGE)]
         public void ToggleLink()
         {
-            if (this.Mode == Mode.Linked)
+            if (Mode == Mode.Linked)
             {
-                if (this.IsConnectionOrigin)
+                if (IsConnectionOrigin)
                 {
-                    this.Unlink();
+                    Unlink();
                 }
                 else
                 {
-                    if (this.Targeter != null)
+                    if (Targeter != null)
                     {
-                        this.Targeter.Unlink();
+                        Targeter.Unlink();
                     }
                 }
             }
-            else if (this.Mode == Mode.Unlinked && ((this.Target != null && this.Target.IsConnectionFree) || (this.Targeter != null && this.Targeter.IsConnectionFree)))
+            else if (Mode == Mode.Unlinked &&
+                     ((Target != null && Target.IsConnectionFree) || (Targeter != null && Targeter.IsConnectionFree)))
             {
-                if (this.Target != null)
+                if (Target != null)
                 {
-                    if (this.IsPossibleTarget(this.Target))
+                    if (this.IsPossibleTarget(Target))
                     {
-                        this.Target.Targeter = this;
-                        this.Target.SetAsTarget();
+                        Target.Targeter = this;
+                        Target.SetAsTarget();
                     }
                     else
                     {
                         OSD.PostMessage("Can't relink at the moment, target may be obstructed.");
                     }
                 }
-                else if (this.Targeter != null)
+                else if (Targeter != null)
                 {
-                    if (this.Targeter.IsPossibleTarget(this))
+                    if (Targeter.IsPossibleTarget(this))
                     {
-                        this.SetAsTarget();
+                        SetAsTarget();
                     }
                     else
                     {
@@ -1313,373 +1368,409 @@ namespace ActiveStruts.Modules
                     }
                 }
             }
-            this.UpdateGui();
+            UpdateGui();
         }
 
         [KSPAction("ToggleLinkAction", KSPActionGroup.None, guiName = "Toggle Link")]
         public void ToggleLinkAction(KSPActionParam param)
         {
-            if (this.Mode == Mode.Linked || (this.Mode == Mode.Unlinked && ((this.Target != null && this.Target.IsConnectionFree) || (this.Targeter != null && this.Targeter.IsConnectionFree))))
+            if (Mode == Mode.Linked ||
+                (Mode == Mode.Unlinked &&
+                 ((Target != null && Target.IsConnectionFree) || (Targeter != null && Targeter.IsConnectionFree))))
             {
-                this.ToggleLink();
+                ToggleLink();
             }
         }
 
-        [KSPEvent(name = "UnDock", active = false, guiName = "Undock from Target", guiActiveEditor = false, guiActiveUnfocused = true, unfocusedRange = Config.UnfocusedRange)]
+        [KSPEvent(name = "UnDock", active = false, guiName = "Undock from Target", guiActiveEditor = false,
+            guiActiveUnfocused = true, unfocusedRange = Config.UNFOCUSED_RANGE)]
         public void UnDock()
         {
-            this.ProcessUnDock();
+            ProcessUnDock();
         }
 
-        [KSPEvent(name = "Unlink", active = false, guiName = "Unlink", guiActiveEditor = false, guiActiveUnfocused = true, unfocusedRange = Config.UnfocusedRange)]
+        [KSPEvent(name = "Unlink", active = false, guiName = "Unlink", guiActiveEditor = false,
+            guiActiveUnfocused = true, unfocusedRange = Config.UNFOCUSED_RANGE)]
         public void Unlink()
         {
-            this.ProcessUnlink(true, false);
+            ProcessUnlink(true, false);
         }
 
         public void Update()
         {
-            if (!this._initialized)
+            if (!initialized)
             {
                 return;
             }
-            if (this._delayedStartFlag)
+            if (delayedStartFlag)
             {
-                this._delayedStart();
+                _delayedStart();
                 return;
             }
-            if (this._jointBroken)
+            if (jointBroken)
             {
-                this._jointBroken = false;
-                this.Unlink();
+                jointBroken = false;
+                Unlink();
                 return;
             }
-            if (this.IsLinked)
+            if (IsLinked)
             {
-                if (this._strutRealignCounter > 0 && !this.IsFlexible && this._strutFinallyCreated && this.ModelFeatures[ModelFeaturesType.Strut])
+                if (strutRealignCounter > 0 && !IsFlexible && strutFinallyCreated &&
+                    ModelFeatures[ModelFeaturesType.Strut])
                 {
-                    this._strutRealignCounter--;
+                    strutRealignCounter--;
                 }
                 else
                 {
-                    this._strutRealignCounter = Config.Instance.StrutRealignInterval;
-                    this._updateSimpleLights();
-                    this._realignStrut();
-                    if (this.IsFreeAttached)
+                    strutRealignCounter = Config.Instance.StrutRealignInterval;
+                    UpdateSimpleLights();
+                    _realignStrut();
+                    if (IsFreeAttached)
                     {
-                        this.LinkType = LinkType.Weak;
+                        LinkType = LinkType.Weak;
                     }
-                    else if (this.IsConnectionOrigin)
+                    else if (IsConnectionOrigin)
                     {
-                        if (this.Target != null)
+                        if (Target != null)
                         {
-                            this.LinkType = this.IsFlexible ? LinkType.Flexible : this.Target.IsTargetOnly ? LinkType.Normal : LinkType.Maximum;
+                            LinkType = IsFlexible
+                                ? LinkType.Flexible
+                                : Target.IsTargetOnly ? LinkType.Normal : LinkType.Maximum;
                         }
                     }
                     else
                     {
-                        if (this.Targeter != null)
+                        if (Targeter != null)
                         {
-                            this.LinkType = this.IsFlexible ? LinkType.Flexible : this.IsTargetOnly ? LinkType.Normal : LinkType.Maximum;
+                            LinkType = IsFlexible
+                                ? LinkType.Flexible
+                                : IsTargetOnly ? LinkType.Normal : LinkType.Maximum;
                         }
                     }
                 }
             }
             else
             {
-                this.LinkType = LinkType.None;
+                LinkType = LinkType.None;
             }
-            if (this.Mode == Mode.Unlinked || this.Mode == Mode.Target || this.Mode == Mode.Targeting)
+            if (Mode == Mode.Unlinked || Mode == Mode.Target || Mode == Mode.Targeting)
             {
-                if (this.IsTargetOnly)
+                if (IsTargetOnly)
                 {
-                    this._showTargetGrappler(false);
+                    _showTargetGrappler(false);
                 }
                 return;
             }
-            if (this.IsTargetOnly)
+            if (IsTargetOnly)
             {
                 if (!this.AnyTargetersConnected())
                 {
-                    this._showTargetGrappler(false);
-                    this.Mode = Mode.Unlinked;
-                    this.UpdateGui();
+                    _showTargetGrappler(false);
+                    Mode = Mode.Unlinked;
+                    UpdateGui();
                     return;
                 }
-                this._showTargetGrappler(true);
+                _showTargetGrappler(true);
             }
-            if (this.Mode == Mode.Linked)
+            if (Mode == Mode.Linked)
             {
                 if (HighLogic.LoadedSceneIsEditor)
                 {
                     return;
                 }
-                if (this.IsOwnVesselConnected)
+                if (IsOwnVesselConnected)
                 {
-                    if (this.IsFreeAttached)
+                    if (IsFreeAttached)
                     {
-                        if (this.FreeAttachPart != null)
+                        if (FreeAttachPart != null)
                         {
-                            if (this.FreeAttachPart.vessel != this.vessel)
+                            if (FreeAttachPart.vessel != vessel)
                             {
-                                this.IsOwnVesselConnected = false;
+                                IsOwnVesselConnected = false;
                             }
                         }
                     }
-                    else if (this.IsTargetOnly)
+                    else if (IsTargetOnly)
                     {
-                        foreach (var connectedTargeter in this.GetAllConnectedTargeters().Where(connectedTargeter => connectedTargeter.vessel != null && connectedTargeter.vessel != this.vessel))
+                        foreach (
+                            var connectedTargeter in
+                                this.GetAllConnectedTargeters()
+                                    .Where(
+                                        connectedTargeter =>
+                                            connectedTargeter.vessel != null && connectedTargeter.vessel != vessel))
                         {
                             connectedTargeter.Unlink();
                         }
                     }
-                    else if (this.Target != null)
+                    else if (Target != null)
                     {
-                        if (this.Target.vessel != this.vessel)
+                        if (Target.vessel != vessel)
                         {
-                            this.IsOwnVesselConnected = false;
+                            IsOwnVesselConnected = false;
                         }
                     }
-                    if (!this.IsOwnVesselConnected)
+                    if (!IsOwnVesselConnected)
                     {
-                        this.Unlink();
+                        Unlink();
                     }
-                    this.UpdateGui();
+                    UpdateGui();
                 }
             }
         }
 
         public void UpdateGui()
         {
-            this.Events["ToggleEnforcement"].active = this.Events["ToggleEnforcement"].guiActive = false;
-            if (HighLogic.LoadedSceneIsEditor || this.IsFlexible || this.IsTargetOnly || !this.IsConnectionOrigin || !this.IsLinked || Config.Instance.GlobalJointWeakness)
+            Events["ToggleEnforcement"].active = Events["ToggleEnforcement"].guiActive = false;
+            if (HighLogic.LoadedSceneIsEditor || IsFlexible || IsTargetOnly || !IsConnectionOrigin || !IsLinked ||
+                Config.Instance.GlobalJointWeakness)
             {
-                this.Fields["IsEnforced"].guiActive = false;
+                Fields["IsEnforced"].guiActive = false;
             }
             if (HighLogic.LoadedSceneIsFlight)
             {
-                if (this.vessel != null && this.vessel.isEVA)
+                if (vessel != null && vessel.isEVA)
                 {
-                    this.Events["UnDock"].active = this.Events["UnDock"].guiActive = false;
-                    this.Events["Dock"].active = this.Events["UnDock"].guiActive = false;
-                    this.Events["Link"].active = this.Events["Link"].guiActive = false;
-                    this.Events["AbortLink"].active = this.Events["AbortLink"].guiActive = false;
-                    this.Events["ToggleLink"].active = this.Events["ToggleLink"].guiActive = false;
-                    this.Events["FreeAttach"].active = this.Events["FreeAttach"].guiActive = false;
-                    this.Events["SetAsTarget"].active = this.Events["SetAsTarget"].guiActive = false;
-                    this.Events["FreeAttachStraight"].active = this.Events["FreeAttachStraight"].guiActive = false;
+                    Events["UnDock"].active = Events["UnDock"].guiActive = false;
+                    Events["Dock"].active = Events["UnDock"].guiActive = false;
+                    Events["Link"].active = Events["Link"].guiActive = false;
+                    Events["AbortLink"].active = Events["AbortLink"].guiActive = false;
+                    Events["ToggleLink"].active = Events["ToggleLink"].guiActive = false;
+                    Events["FreeAttach"].active = Events["FreeAttach"].guiActive = false;
+                    Events["SetAsTarget"].active = Events["SetAsTarget"].guiActive = false;
+                    Events["FreeAttachStraight"].active = Events["FreeAttachStraight"].guiActive = false;
                     return;
                 }
-                switch (this.Mode)
+                switch (Mode)
                 {
                     case Mode.Linked:
                     {
-                        this.Events["Link"].active = this.Events["Link"].guiActive = false;
-                        this.Events["SetAsTarget"].active = this.Events["SetAsTarget"].guiActive = false;
-                        this.Events["FreeAttach"].active = this.Events["FreeAttach"].guiActive = false;
-                        if (!this.IsTargetOnly)
+                        Events["Link"].active = Events["Link"].guiActive = false;
+                        Events["SetAsTarget"].active = Events["SetAsTarget"].guiActive = false;
+                        Events["FreeAttach"].active = Events["FreeAttach"].guiActive = false;
+                        if (!IsTargetOnly)
                         {
-                            this.Events["AbortLink"].active = this.Events["AbortLink"].guiActive = false;
-                            if (!this.IsFlexible && this.IsConnectionOrigin && !Config.Instance.GlobalJointWeakness)
+                            Events["AbortLink"].active = Events["AbortLink"].guiActive = false;
+                            if (!IsFlexible && IsConnectionOrigin && !Config.Instance.GlobalJointWeakness)
                             {
-                                this.Events["ToggleEnforcement"].active = this.Events["ToggleEnforcement"].guiActive = true;
+                                Events["ToggleEnforcement"].active = Events["ToggleEnforcement"].guiActive = true;
                             }
-                            if (!this.IsFlexible)
+                            if (!IsFlexible)
                             {
-                                this.Fields["IsEnforced"].guiActive = true;
+                                Fields["IsEnforced"].guiActive = true;
                             }
-                            if (this.IsFreeAttached)
+                            if (IsFreeAttached)
                             {
-                                this.Events["ToggleLink"].active = this.Events["ToggleLink"].guiActive = false;
-                                this.Events["Unlink"].active = this.Events["Unlink"].guiActive = true;
+                                Events["ToggleLink"].active = Events["ToggleLink"].guiActive = false;
+                                Events["Unlink"].active = Events["Unlink"].guiActive = true;
                             }
                             else
                             {
-                                this.Events["ToggleLink"].active = this.Events["ToggleLink"].guiActive = true;
-                                this.Events["Unlink"].active = this.Events["Unlink"].guiActive = false;
+                                Events["ToggleLink"].active = Events["ToggleLink"].guiActive = true;
+                                Events["Unlink"].active = Events["Unlink"].guiActive = false;
                             }
-                            if (!this.IsOwnVesselConnected && !this.IsDocked)
+                            if (!IsOwnVesselConnected && !IsDocked)
                             {
                                 if (Config.Instance.DockingEnabled &&
-                                    !(this.IsFreeAttached ? this.FreeAttachPart != null && this.FreeAttachPart.vessel == this.vessel : this.Target != null && this.Target.part != null && this.Target.part.vessel == this.vessel))
+                                    !(IsFreeAttached
+                                        ? FreeAttachPart != null && FreeAttachPart.vessel == vessel
+                                        : Target != null && Target.part != null && Target.part.vessel == vessel))
                                 {
-                                    this.Events["Dock"].active = this.Events["Dock"].guiActive = true;
+                                    Events["Dock"].active = Events["Dock"].guiActive = true;
                                 }
-                                this.Events["UnDock"].active = this.Events["UnDock"].guiActive = false;
+                                Events["UnDock"].active = Events["UnDock"].guiActive = false;
                             }
-                            if (!this.IsOwnVesselConnected && this.IsDocked)
+                            if (!IsOwnVesselConnected && IsDocked)
                             {
-                                this.Events["Dock"].active = this.Events["Dock"].guiActive = false;
-                                this.Events["UnDock"].active = this.Events["UnDock"].guiActive = true;
+                                Events["Dock"].active = Events["Dock"].guiActive = false;
+                                Events["UnDock"].active = Events["UnDock"].guiActive = true;
                             }
                         }
                         else
                         {
-                            this.Events["Unlink"].active = this.Events["Unlink"].guiActive = false;
-                            this.Events["ToggleLink"].active = this.Events["ToggleLink"].guiActive = false;
+                            Events["Unlink"].active = Events["Unlink"].guiActive = false;
+                            Events["ToggleLink"].active = Events["ToggleLink"].guiActive = false;
                         }
                     }
                         break;
                     case Mode.Unlinked:
                     {
-                        this.Events["SetAsTarget"].active = this.Events["SetAsTarget"].guiActive = false;
-                        this.Events["Unlink"].active = this.Events["Unlink"].guiActive = false;
-                        this.Events["UnDock"].active = this.Events["UnDock"].guiActive = false;
-                        this.Events["Dock"].active = this.Events["Dock"].guiActive = false;
-                        if (this.IsTargetOnly)
+                        Events["SetAsTarget"].active = Events["SetAsTarget"].guiActive = false;
+                        Events["Unlink"].active = Events["Unlink"].guiActive = false;
+                        Events["UnDock"].active = Events["UnDock"].guiActive = false;
+                        Events["Dock"].active = Events["Dock"].guiActive = false;
+                        if (IsTargetOnly)
                         {
-                            this.Events["Link"].active = this.Events["Link"].guiActive = false;
+                            Events["Link"].active = Events["Link"].guiActive = false;
                         }
                         else
                         {
-                            this.Events["Link"].active = this.Events["Link"].guiActive = true;
-                            if (!this.IsFlexible)
+                            Events["Link"].active = Events["Link"].guiActive = true;
+                            if (!IsFlexible)
                             {
-                                this.Events["FreeAttach"].active = this.Events["FreeAttach"].guiActive = true;
+                                Events["FreeAttach"].active = Events["FreeAttach"].guiActive = true;
                             }
                             else
                             {
-                                this.Events["FreeAttach"].active = this.Events["FreeAttach"].guiActive = false;
+                                Events["FreeAttach"].active = Events["FreeAttach"].guiActive = false;
                             }
-                            this.Events["AbortLink"].active = this.Events["AbortLink"].guiActive = false;
-                            if ((this.Target != null && this.Target.IsConnectionFree) || (this.Targeter != null && this.Targeter.IsConnectionFree))
+                            Events["AbortLink"].active = Events["AbortLink"].guiActive = false;
+                            if ((Target != null && Target.IsConnectionFree) ||
+                                (Targeter != null && Targeter.IsConnectionFree))
                             {
-                                this.Events["ToggleLink"].active = this.Events["ToggleLink"].guiActive = true;
+                                Events["ToggleLink"].active = Events["ToggleLink"].guiActive = true;
                             }
                             else
                             {
-                                this.Events["ToggleLink"].active = this.Events["ToggleLink"].guiActive = false;
+                                Events["ToggleLink"].active = Events["ToggleLink"].guiActive = false;
                             }
                         }
                     }
                         break;
                     case Mode.Target:
                     {
-                        this.Events["UnDock"].active = this.Events["UnDock"].guiActive = false;
-                        this.Events["Dock"].active = this.Events["Dock"].guiActive = false;
-                        this.Events["SetAsTarget"].active = this.Events["SetAsTarget"].guiActive = true;
-                        if (!this.IsTargetOnly)
+                        Events["UnDock"].active = Events["UnDock"].guiActive = false;
+                        Events["Dock"].active = Events["Dock"].guiActive = false;
+                        Events["SetAsTarget"].active = Events["SetAsTarget"].guiActive = true;
+                        if (!IsTargetOnly)
                         {
-                            this.Events["Link"].active = this.Events["Link"].guiActive = false;
+                            Events["Link"].active = Events["Link"].guiActive = false;
                         }
-                        this.Events["ToggleLink"].active = this.Events["ToggleLink"].guiActive = false;
-                        this.Events["FreeAttach"].active = this.Events["FreeAttach"].guiActive = false;
+                        Events["ToggleLink"].active = Events["ToggleLink"].guiActive = false;
+                        Events["FreeAttach"].active = Events["FreeAttach"].guiActive = false;
                     }
                         break;
                     case Mode.Targeting:
                     {
-                        this.Events["UnDock"].active = this.Events["UnDock"].guiActive = false;
-                        this.Events["Dock"].active = this.Events["Dock"].guiActive = false;
-                        this.Events["Link"].active = this.Events["Link"].guiActive = false;
-                        this.Events["AbortLink"].active = this.Events["AbortLink"].guiActive = true;
-                        this.Events["ToggleLink"].active = this.Events["ToggleLink"].guiActive = false;
-                        this.Events["FreeAttach"].active = this.Events["FreeAttach"].guiActive = false;
+                        Events["UnDock"].active = Events["UnDock"].guiActive = false;
+                        Events["Dock"].active = Events["Dock"].guiActive = false;
+                        Events["Link"].active = Events["Link"].guiActive = false;
+                        Events["AbortLink"].active = Events["AbortLink"].guiActive = true;
+                        Events["ToggleLink"].active = Events["ToggleLink"].guiActive = false;
+                        Events["FreeAttach"].active = Events["FreeAttach"].guiActive = false;
                     }
                         break;
                 }
-                this.Events["FreeAttachStraight"].active = this.Events["FreeAttachStraight"].guiActive = this.Events["FreeAttach"].active;
+                Events["FreeAttachStraight"].active =
+                    Events["FreeAttachStraight"].guiActive = Events["FreeAttach"].active;
             }
             else if (HighLogic.LoadedSceneIsEditor)
             {
-                this.Events["ToggleLink"].active = this.Events["ToggleLink"].guiActive = this.Events["ToggleLink"].guiActiveEditor = false;
-                this.Events["UnDock"].active = this.Events["UnDock"].guiActive = this.Events["UnDock"].guiActiveEditor = false;
-                this.Events["Dock"].active = this.Events["Dock"].guiActive = this.Events["Dock"].guiActiveEditor = false;
-                switch (this.Mode)
+                Events["ToggleLink"].active =
+                    Events["ToggleLink"].guiActive = Events["ToggleLink"].guiActiveEditor = false;
+                Events["UnDock"].active = Events["UnDock"].guiActive = Events["UnDock"].guiActiveEditor = false;
+                Events["Dock"].active = Events["Dock"].guiActive = Events["Dock"].guiActiveEditor = false;
+                switch (Mode)
                 {
                     case Mode.Linked:
                     {
-                        if (!this.IsTargetOnly)
+                        if (!IsTargetOnly)
                         {
-                            this.Events["Unlink"].active = this.Events["Unlink"].guiActive = this.Events["Unlink"].guiActiveEditor = true;
+                            Events["Unlink"].active =
+                                Events["Unlink"].guiActive = Events["Unlink"].guiActiveEditor = true;
                         }
-                        this.Events["Link"].active = this.Events["Link"].guiActive = this.Events["Link"].guiActiveEditor = false;
-                        this.Events["SetAsTarget"].active = this.Events["SetAsTarget"].guiActive = this.Events["SetAsTarget"].guiActiveEditor = false;
-                        this.Events["AbortLink"].active = this.Events["AbortLink"].guiActive = this.Events["AbortLink"].guiActiveEditor = false;
-                        this.Events["FreeAttach"].active = this.Events["FreeAttach"].guiActive = this.Events["FreeAttach"].guiActiveEditor = false;
+                        Events["Link"].active = Events["Link"].guiActive = Events["Link"].guiActiveEditor = false;
+                        Events["SetAsTarget"].active =
+                            Events["SetAsTarget"].guiActive = Events["SetAsTarget"].guiActiveEditor = false;
+                        Events["AbortLink"].active =
+                            Events["AbortLink"].guiActive = Events["AbortLink"].guiActiveEditor = false;
+                        Events["FreeAttach"].active =
+                            Events["FreeAttach"].guiActive = Events["FreeAttach"].guiActiveEditor = false;
                     }
                         break;
                     case Mode.Unlinked:
                     {
-                        this.Events["Unlink"].active = this.Events["Unlink"].guiActive = this.Events["Unlink"].guiActiveEditor = false;
-                        this.Events["SetAsTarget"].active = this.Events["SetAsTarget"].guiActive = this.Events["SetAsTarget"].guiActiveEditor = false;
-                        this.Events["AbortLink"].active = this.Events["AbortLink"].guiActive = this.Events["AbortLink"].guiActiveEditor = false;
-                        if (!this.IsTargetOnly)
+                        Events["Unlink"].active = Events["Unlink"].guiActive = Events["Unlink"].guiActiveEditor = false;
+                        Events["SetAsTarget"].active =
+                            Events["SetAsTarget"].guiActive = Events["SetAsTarget"].guiActiveEditor = false;
+                        Events["AbortLink"].active =
+                            Events["AbortLink"].guiActive = Events["AbortLink"].guiActiveEditor = false;
+                        if (!IsTargetOnly)
                         {
-                            this.Events["Link"].active = this.Events["Link"].guiActive = this.Events["Link"].guiActiveEditor = true;
-                            if (!this.IsFlexible)
+                            Events["Link"].active = Events["Link"].guiActive = Events["Link"].guiActiveEditor = true;
+                            if (!IsFlexible)
                             {
-                                this.Events["FreeAttach"].active = this.Events["FreeAttach"].guiActive = this.Events["FreeAttach"].guiActiveEditor = true;
+                                Events["FreeAttach"].active =
+                                    Events["FreeAttach"].guiActive = Events["FreeAttach"].guiActiveEditor = true;
                             }
                             else
                             {
-                                this.Events["FreeAttach"].active = this.Events["FreeAttach"].guiActive = this.Events["FreeAttach"].guiActiveEditor = false;
+                                Events["FreeAttach"].active =
+                                    Events["FreeAttach"].guiActive = Events["FreeAttach"].guiActiveEditor = false;
                             }
                         }
                     }
                         break;
                     case Mode.Target:
                     {
-                        this.Events["Unlink"].active = this.Events["Unlink"].guiActive = this.Events["Unlink"].guiActiveEditor = false;
-                        this.Events["Link"].active = this.Events["Link"].guiActive = this.Events["Link"].guiActiveEditor = false;
-                        this.Events["SetAsTarget"].active = this.Events["SetAsTarget"].guiActive = this.Events["SetAsTarget"].guiActiveEditor = true;
-                        this.Events["AbortLink"].active = this.Events["AbortLink"].guiActive = this.Events["AbortLink"].guiActiveEditor = false;
-                        this.Events["FreeAttach"].active = this.Events["FreeAttach"].guiActive = this.Events["FreeAttach"].guiActiveEditor = false;
+                        Events["Unlink"].active = Events["Unlink"].guiActive = Events["Unlink"].guiActiveEditor = false;
+                        Events["Link"].active = Events["Link"].guiActive = Events["Link"].guiActiveEditor = false;
+                        Events["SetAsTarget"].active =
+                            Events["SetAsTarget"].guiActive = Events["SetAsTarget"].guiActiveEditor = true;
+                        Events["AbortLink"].active =
+                            Events["AbortLink"].guiActive = Events["AbortLink"].guiActiveEditor = false;
+                        Events["FreeAttach"].active =
+                            Events["FreeAttach"].guiActive = Events["FreeAttach"].guiActiveEditor = false;
                     }
                         break;
                     case Mode.Targeting:
                     {
-                        this.Events["Unlink"].active = this.Events["Unlink"].guiActive = this.Events["Unlink"].guiActiveEditor = false;
-                        this.Events["Link"].active = this.Events["Link"].guiActive = this.Events["Link"].guiActiveEditor = false;
-                        this.Events["SetAsTarget"].active = this.Events["SetAsTarget"].guiActive = this.Events["SetAsTarget"].guiActiveEditor = false;
-                        this.Events["AbortLink"].active = this.Events["AbortLink"].guiActive = this.Events["AbortLink"].guiActiveEditor = true;
-                        this.Events["FreeAttach"].active = this.Events["FreeAttach"].guiActive = this.Events["FreeAttach"].guiActiveEditor = false;
+                        Events["Unlink"].active = Events["Unlink"].guiActive = Events["Unlink"].guiActiveEditor = false;
+                        Events["Link"].active = Events["Link"].guiActive = Events["Link"].guiActiveEditor = false;
+                        Events["SetAsTarget"].active =
+                            Events["SetAsTarget"].guiActive = Events["SetAsTarget"].guiActiveEditor = false;
+                        Events["AbortLink"].active =
+                            Events["AbortLink"].guiActive = Events["AbortLink"].guiActiveEditor = true;
+                        Events["FreeAttach"].active =
+                            Events["FreeAttach"].guiActive = Events["FreeAttach"].guiActiveEditor = false;
                     }
                         break;
                 }
-                this.Events["FreeAttachStraight"].active = this.Events["FreeAttachStraight"].guiActive = this.Events["FreeAttachStraight"].guiActiveEditor = this.Events["FreeAttach"].active;
+                Events["FreeAttachStraight"].active =
+                    Events["FreeAttachStraight"].guiActive =
+                        Events["FreeAttachStraight"].guiActiveEditor = Events["FreeAttach"].active;
                 if (!Config.Instance.AllowFreeAttachInEditor)
                 {
-                    this.Events["FreeAttach"].guiActiveEditor = false;
+                    Events["FreeAttach"].guiActiveEditor = false;
                 }
             }
         }
 
         private IEnumerator WaitAndCreateFlexibleJoint()
         {
-            this._localFlexAnchor = Utilities.CreateLocalAnchor("ActiveFlexJoint", true);
-            this._localFlexAnchor.transform.position = this.Target.FlexOffsetOriginPosition;
-            this._flexStrut = Utilities.CreateFlexStrut("ActiveFlexJointStrut", false, Color.black);
-            this._flexFakeSlingLocal = Utilities.CreateFakeRopeSling("ActiveFlexJointStrutSling", false, Color.black);
-            this._flexFakeSlingTarget = Utilities.CreateFakeRopeSling("ActiveFlexJointStrutSling", false, Color.black);
+            localFlexAnchor = Utilities.CreateLocalAnchor("ActiveFlexJoint", true);
+            localFlexAnchor.transform.position = Target.FlexOffsetOriginPosition;
+            flexStrut = Utilities.CreateFlexStrut("ActiveFlexJointStrut", false, Color.black);
+            flexFakeSlingLocal = Utilities.CreateFakeRopeSling("ActiveFlexJointStrutSling", false, Color.black);
+            flexFakeSlingTarget = Utilities.CreateFakeRopeSling("ActiveFlexJointStrutSling", false, Color.black);
             yield return new WaitForSeconds(0.1f);
             yield return new WaitForFixedUpdate();
-            this._localFlexAnchor.transform.position = this.Target.FlexOffsetOriginPosition;
-            var distance = Vector3.Distance(this.FlexOffsetOriginPosition, this.Target.FlexOffsetOriginPosition);
-            this._flexJoint = this._localFlexAnchor.AddComponent<SpringJoint>();
-            this._flexJoint.spring = this.FlexibleStrutSpring;
-            this._flexJoint.damper = this.FlexibleStrutDamper;
-            this._flexJoint.anchor = this._localFlexAnchor.transform.position;
-            this._flexJoint.connectedBody = this.Target.part.parent.rigidbody;
-            this._flexJoint.maxDistance = distance + 0.25f;
-            this._flexJoint.breakForce = Mathf.Infinity;
-            this._flexJoint.breakTorque = Mathf.Infinity;
+            localFlexAnchor.transform.position = Target.FlexOffsetOriginPosition;
+            var distance = Vector3.Distance(FlexOffsetOriginPosition, Target.FlexOffsetOriginPosition);
+            flexJoint = localFlexAnchor.AddComponent<SpringJoint>();
+            flexJoint.spring = FlexibleStrutSpring;
+            flexJoint.damper = FlexibleStrutDamper;
+            flexJoint.anchor = localFlexAnchor.transform.position;
+            flexJoint.connectedBody = Target.part.parent.rigidbody;
+            flexJoint.maxDistance = distance + 0.25f;
+            flexJoint.breakForce = Mathf.Infinity;
+            flexJoint.breakTorque = Mathf.Infinity;
             yield return new WaitForSeconds(0.1f);
             yield return new WaitForFixedUpdate();
-            this._localFlexAnchor.transform.position = this.FlexOffsetOriginPosition;
+            localFlexAnchor.transform.position = FlexOffsetOriginPosition;
             yield return new WaitForFixedUpdate();
-            this._localFlexAnchorFixedJoint = this._localFlexAnchor.AddComponent<FixedJoint>();
-            this._localFlexAnchorFixedJoint.connectedBody = this.part.rigidbody;
-            this._localFlexAnchorFixedJoint.breakForce = this._localFlexAnchorFixedJoint.breakTorque = Mathf.Infinity;
+            localFlexAnchorFixedJoint = localFlexAnchor.AddComponent<FixedJoint>();
+            localFlexAnchorFixedJoint.connectedBody = part.rigidbody;
+            localFlexAnchorFixedJoint.breakForce = localFlexAnchorFixedJoint.breakTorque = Mathf.Infinity;
         }
 
         private void _continueWithStraightOutAttach(Part newPart)
         {
-            var rayres = this._performStraightOutRaycast();
+            var rayres = _performStraightOutRaycast();
             if (rayres.Item1)
             {
                 ActiveStrutsAddon.NewSpawnedPart = newPart;
                 ActiveStrutsAddon.CurrentTargeter = this;
-                this.StartCoroutine(ActiveStrutsAddon.PlaceNewPart(rayres.Item2.PartFromHit(), rayres.Item2));
+                StartCoroutine(ActiveStrutsAddon.PlaceNewPart(rayres.Item2.PartFromHit(), rayres.Item2));
                 return;
             }
             OSD.PostMessage("Straight Out Attach failed!");
@@ -1689,377 +1780,391 @@ namespace ActiveStruts.Modules
 
         private void _delayedStart()
         {
-            if (this._ticksForDelayedStart > 0)
+            if (ticksForDelayedStart > 0)
             {
-                this._ticksForDelayedStart--;
+                ticksForDelayedStart--;
                 return;
             }
-            this._delayedStartFlag = false;
-            if (this.Id == Guid.Empty.ToString())
+            delayedStartFlag = false;
+            if (Id == Guid.Empty.ToString())
             {
-                this.Id = Guid.NewGuid().ToString();
+                Id = Guid.NewGuid().ToString();
             }
-            if (HighLogic.LoadedSceneIsFlight && !this.IdResetDone)
+            if (HighLogic.LoadedSceneIsFlight && !IdResetDone)
             {
                 ActiveStrutsAddon.Enqueue(this);
             }
-            if (this.IsLinked)
+            if (IsLinked)
             {
-                if (this.IsTargetOnly)
+                if (IsTargetOnly)
                 {
-                    this.Mode = Mode.Linked;
+                    Mode = Mode.Linked;
                 }
                 else
                 {
-                    this.Reconnect();
+                    Reconnect();
                 }
             }
             else
             {
-                this.Mode = Mode.Unlinked;
+                Mode = Mode.Unlinked;
             }
-            this.Events.Sort((l, r) =>
-                             {
-                                 if (l.name == "Link" && r.name == "FreeAttach")
-                                 {
-                                     return -1;
-                                 }
-                                 if (r.name == "Link" && l.name == "FreeAttach")
-                                 {
-                                     return 1;
-                                 }
-                                 if (l.name == "FreeAttach" && r.name == "FreeAttachStraight")
-                                 {
-                                     return -1;
-                                 }
-                                 if (r.name == "FreeAttach" && l.name == "FreeAttachStraight")
-                                 {
-                                     return 1;
-                                 }
-                                 if (l.name == "Link" && r.name == "FreeAttachStraight")
-                                 {
-                                     return -1;
-                                 }
-                                 if (r.name == "Link" && l.name == "FreeAttachStraight")
-                                 {
-                                     return 1;
-                                 }
-                                 if (r.name == "ToggleEnforcement")
-                                 {
-                                     return 1;
-                                 }
-                                 if (l.name == "ToggleEnforcement")
-                                 {
-                                     return -1;
-                                 }
-                                 return string.Compare(l.name, r.name, StringComparison.Ordinal);
-                             }
+            Events.Sort((l, r) =>
+            {
+                if (l.name == "Link" && r.name == "FreeAttach")
+                {
+                    return -1;
+                }
+                if (r.name == "Link" && l.name == "FreeAttach")
+                {
+                    return 1;
+                }
+                if (l.name == "FreeAttach" && r.name == "FreeAttachStraight")
+                {
+                    return -1;
+                }
+                if (r.name == "FreeAttach" && l.name == "FreeAttachStraight")
+                {
+                    return 1;
+                }
+                if (l.name == "Link" && r.name == "FreeAttachStraight")
+                {
+                    return -1;
+                }
+                if (r.name == "Link" && l.name == "FreeAttachStraight")
+                {
+                    return 1;
+                }
+                if (r.name == "ToggleEnforcement")
+                {
+                    return 1;
+                }
+                if (l.name == "ToggleEnforcement")
+                {
+                    return -1;
+                }
+                return string.Compare(l.name, r.name, StringComparison.Ordinal);
+            }
                 );
-            this.UpdateGui();
+            UpdateGui();
         }
 
         private void _findModelFeatures()
         {
-            this.ModelFeatures = new Dictionary<ModelFeaturesType, bool>();
-            this._featureOrientation = new Dictionary<ModelFeaturesType, OrientationInfo>();
-            if (!string.IsNullOrEmpty(this.GrapplerName))
+            ModelFeatures = new Dictionary<ModelFeaturesType, bool>();
+            featureOrientation = new Dictionary<ModelFeaturesType, OrientationInfo>();
+            if (!string.IsNullOrEmpty(GrapplerName))
             {
-                this.Grappler = this.part.FindModelTransform(this.GrapplerName);
-                this.ModelFeatures.Add(ModelFeaturesType.Grappler, true);
+                Grappler = part.FindModelTransform(GrapplerName);
+                ModelFeatures.Add(ModelFeaturesType.Grappler, true);
             }
             else
             {
-                this.ModelFeatures.Add(ModelFeaturesType.Grappler, false);
+                ModelFeatures.Add(ModelFeaturesType.Grappler, false);
             }
-            if (!string.IsNullOrEmpty(this.StrutName))
+            if (!string.IsNullOrEmpty(StrutName))
             {
-                this.Strut = this.part.FindModelTransform(this.StrutName);
-                this.ModelFeatures.Add(ModelFeaturesType.Strut, true);
-                DestroyImmediate(this.Strut.collider);
+                Strut = part.FindModelTransform(StrutName);
+                ModelFeatures.Add(ModelFeaturesType.Strut, true);
+                DestroyImmediate(Strut.collider);
             }
             else
             {
-                if (!this.IsTargetOnly)
+                if (!IsTargetOnly)
                 {
-                    this._simpleStrut = Utilities.CreateSimpleStrut("Targeterstrut");
-                    this._simpleStrut.SetActive(true);
-                    this._simpleStrut.transform.localScale = Vector3.zero;
-                    this.Strut = this._simpleStrut.transform;
+                    simpleStrut = Utilities.CreateSimpleStrut("Targeterstrut");
+                    simpleStrut.SetActive(true);
+                    simpleStrut.transform.localScale = Vector3.zero;
+                    Strut = simpleStrut.transform;
                 }
-                this.ModelFeatures.Add(ModelFeaturesType.Strut, false);
+                ModelFeatures.Add(ModelFeaturesType.Strut, false);
             }
-            if (!string.IsNullOrEmpty(this.HooksName))
+            if (!string.IsNullOrEmpty(HooksName))
             {
-                this.Hooks = this.part.FindModelTransform(this.HooksName);
-                this.ModelFeatures.Add(ModelFeaturesType.Hooks, true);
-                this._featureOrientation.Add(ModelFeaturesType.Hooks, new OrientationInfo(this.HooksForward));
-                DestroyImmediate(this.Hooks.collider);
+                Hooks = part.FindModelTransform(HooksName);
+                ModelFeatures.Add(ModelFeaturesType.Hooks, true);
+                featureOrientation.Add(ModelFeaturesType.Hooks, new OrientationInfo(HooksForward));
+                DestroyImmediate(Hooks.collider);
             }
             else
             {
-                this.ModelFeatures.Add(ModelFeaturesType.Hooks, false);
+                ModelFeatures.Add(ModelFeaturesType.Hooks, false);
             }
-            if (!string.IsNullOrEmpty(this.LightsBrightName))
+            if (!string.IsNullOrEmpty(LightsBrightName))
             {
-                this.LightsBright = this.part.FindModelTransform(this.LightsBrightName);
-                this.ModelFeatures.Add(ModelFeaturesType.LightsBright, true);
-                DestroyImmediate(this.LightsBright.collider);
+                LightsBright = part.FindModelTransform(LightsBrightName);
+                ModelFeatures.Add(ModelFeaturesType.LightsBright, true);
+                DestroyImmediate(LightsBright.collider);
             }
             else
             {
-                this.ModelFeatures.Add(ModelFeaturesType.LightsBright, false);
+                ModelFeatures.Add(ModelFeaturesType.LightsBright, false);
             }
-            if (!string.IsNullOrEmpty(this.LightsDullName))
+            if (!string.IsNullOrEmpty(LightsDullName))
             {
-                this.LightsDull = this.part.FindModelTransform(this.LightsDullName);
-                this.ModelFeatures.Add(ModelFeaturesType.LightsDull, true);
-                DestroyImmediate(this.LightsDull.collider);
+                LightsDull = part.FindModelTransform(LightsDullName);
+                ModelFeatures.Add(ModelFeaturesType.LightsDull, true);
+                DestroyImmediate(LightsDull.collider);
             }
             else
             {
-                this.ModelFeatures.Add(ModelFeaturesType.LightsDull, false);
+                ModelFeatures.Add(ModelFeaturesType.LightsDull, false);
             }
-            if (!string.IsNullOrEmpty(this.HeadName))
+            if (!string.IsNullOrEmpty(HeadName))
             {
-                var head = this.part.FindModelTransform(this.HeadName);
-                this.StrutOrigin = head.transform;
-                this._headTransform = head;
-                this.ModelFeatures.Add(ModelFeaturesType.HeadExtension, true);
+                var head = part.FindModelTransform(HeadName);
+                StrutOrigin = head.transform;
+                headTransform = head;
+                ModelFeatures.Add(ModelFeaturesType.HeadExtension, true);
             }
             else
             {
-                this.ModelFeatures.Add(ModelFeaturesType.HeadExtension, false);
+                ModelFeatures.Add(ModelFeaturesType.HeadExtension, false);
             }
-            if (!string.IsNullOrEmpty(this.SimpleLightsName))
+            if (!string.IsNullOrEmpty(SimpleLightsName))
             {
-                this._simpleLights = this.part.FindModelTransform(this.SimpleLightsName);
-                this._simpleLightsSecondary = this.part.FindModelTransform(this.SimpleLightsSecondaryName);
-                this._featureOrientation.Add(ModelFeaturesType.SimpleLights, new OrientationInfo(this.SimpleLightsForward));
-                this.ModelFeatures.Add(ModelFeaturesType.SimpleLights, true);
+                simpleLights = part.FindModelTransform(SimpleLightsName);
+                simpleLightsSecondary = part.FindModelTransform(SimpleLightsSecondaryName);
+                featureOrientation.Add(ModelFeaturesType.SimpleLights, new OrientationInfo(SimpleLightsForward));
+                ModelFeatures.Add(ModelFeaturesType.SimpleLights, true);
             }
             else
             {
-                this.ModelFeatures.Add(ModelFeaturesType.SimpleLights, false);
+                ModelFeatures.Add(ModelFeaturesType.SimpleLights, false);
             }
-            if (!string.IsNullOrEmpty(this.AnimationName))
-            {
-                this.ModelFeatures.Add(ModelFeaturesType.Animation, true);
-            }
-            else
-            {
-                this.ModelFeatures.Add(ModelFeaturesType.Animation, false);
-            }
+            ModelFeatures.Add(ModelFeaturesType.Animation, !string.IsNullOrEmpty(AnimationName));
         }
 
-        private void _manageAttachNode(float breakForce)
+        private void ManageAttachNode(float breakForce)
         {
-            if (!this.IsConnectionOrigin || this.IsTargetOnly || this._jointAttachNode != null || !HighLogic.LoadedSceneIsFlight)
+            if (!IsConnectionOrigin || IsTargetOnly || jointAttachNode != null || !HighLogic.LoadedSceneIsFlight)
             {
                 return;
             }
             try
             {
-                var targetPart = this.IsFreeAttached ? this.FreeAttachPart : this.Target.part;
+                var targetPart = IsFreeAttached ? FreeAttachPart : Target.part;
                 if (targetPart == null)
                 {
                     return;
                 }
-                var freeAttachedHitPoint = this.IsFreeAttached ? this.FreeAttachPart.transform.position : Vector3.zero;
-                var normDir = (this.Origin.position - (this.IsFreeAttached ? this.FreeAttachPart.transform.position : this.Target.Origin.position)).normalized;
-                this._jointAttachNode = new AttachNode {id = Guid.NewGuid().ToString(), attachedPart = targetPart};
-                this._jointAttachNode.breakingForce = this._jointAttachNode.breakingTorque = breakForce;
-                this._jointAttachNode.position = targetPart.partTransform.InverseTransformPoint(this.IsFreeAttached ? freeAttachedHitPoint : targetPart.partTransform.position);
-                this._jointAttachNode.orientation = targetPart.partTransform.InverseTransformDirection(normDir);
-                this._jointAttachNode.size = 1;
-                this._jointAttachNode.ResourceXFeed = false;
-                this._jointAttachNode.attachMethod = AttachNodeMethod.FIXED_JOINT;
-                this.part.attachNodes.Add(this._jointAttachNode);
-                this._jointAttachNode.owner = this.part;
-                this._partJoint = PartJoint.Create(this.part, this.IsFreeAttached ? (targetPart.parent ?? targetPart) : targetPart, this._jointAttachNode, null, AttachModes.SRF_ATTACH);
+                var freeAttachedHitPoint = IsFreeAttached ? FreeAttachPart.transform.position : Vector3.zero;
+                var normDir =
+                    (Origin.position - (IsFreeAttached ? FreeAttachPart.transform.position : Target.Origin.position))
+                        .normalized;
+                jointAttachNode = new AttachNode {id = Guid.NewGuid().ToString(), attachedPart = targetPart};
+                jointAttachNode.breakingForce = jointAttachNode.breakingTorque = breakForce;
+                jointAttachNode.position =
+                    targetPart.partTransform.InverseTransformPoint(IsFreeAttached
+                        ? freeAttachedHitPoint
+                        : targetPart.partTransform.position);
+                jointAttachNode.orientation = targetPart.partTransform.InverseTransformDirection(normDir);
+                jointAttachNode.size = 1;
+                jointAttachNode.ResourceXFeed = false;
+                jointAttachNode.attachMethod = AttachNodeMethod.FIXED_JOINT;
+                part.attachNodes.Add(jointAttachNode);
+                jointAttachNode.owner = part;
+                partJoint = PartJoint.Create(part, IsFreeAttached ? (targetPart.parent ?? targetPart) : targetPart,
+                    jointAttachNode, null, AttachModes.SRF_ATTACH);
             }
             catch (Exception e)
             {
-                this._jointAttachNode = null;
+                jointAttachNode = null;
                 Debug.Log("[AS] failed to create attachjoint: " + e.Message + " " + e.StackTrace);
             }
         }
 
-        private void _moveFakeRopeSling(bool local, GameObject sling)
+        private void MoveFakeRopeSling(bool local, GameObject sling)
         {
             sling.SetActive(false);
             var trans = sling.transform;
-            trans.rotation = local ? this.Origin.rotation : this.Target.Origin.rotation;
+            trans.rotation = local ? Origin.rotation : Target.Origin.rotation;
             trans.Rotate(new Vector3(0, 0, 1), 90f);
             trans.Rotate(new Vector3(1, 0, 0), 90f);
-            trans.LookAt(local ? this.Target.FlexOffsetOriginPosition : this.FlexOffsetOriginPosition);
-            var dir = this.Target.FlexOffsetOriginPosition - this.FlexOffsetOriginPosition;
+            trans.LookAt(local ? Target.FlexOffsetOriginPosition : FlexOffsetOriginPosition);
+            var dir = Target.FlexOffsetOriginPosition - FlexOffsetOriginPosition;
             if (!local)
             {
                 dir *= -1;
             }
-            trans.position = (local ? this.FlexOffsetOriginPosition : this.Target.FlexOffsetOriginPosition) + (dir.normalized*this.FlexibleStrutSlingOffset);
+            trans.position = (local ? FlexOffsetOriginPosition : Target.FlexOffsetOriginPosition) +
+                             (dir.normalized*FlexibleStrutSlingOffset);
             sling.SetActive(true);
         }
 
         private Tuple<bool, RaycastHit> _performStraightOutRaycast()
         {
-            var rayRes = Utilities.PerformRaycastIntoDir(this.Origin.position, this.RealModelForward, this.RealModelForward, this.part);
+            var rayRes = Utilities.PerformRaycastIntoDir(Origin.position, RealModelForward, RealModelForward, part);
             return new Tuple<bool, RaycastHit>(rayRes.HitResult, rayRes.Hit);
         }
 
         private void _realignStrut()
         {
-            if (this.IsFreeAttached)
+            if (IsFreeAttached)
             {
-                lock (this._freeAttachStrutUpdateLock)
+                lock (freeAttachStrutUpdateLock)
                 {
                     Vector3[] targetPos;
-                    if (this.StraightOutAttachAppliedInEditor || this._straightOutAttached)
+                    if (StraightOutAttachAppliedInEditor || straightOutAttached)
                     {
-                        var raycast = this._performStraightOutRaycast();
+                        var raycast = _performStraightOutRaycast();
                         if (!raycast.Item1)
                         {
-                            this.DestroyStrut();
-                            this.IsLinked = false;
-                            this.IsFreeAttached = false;
+                            DestroyStrut();
+                            IsLinked = false;
+                            IsFreeAttached = false;
                             return;
                         }
                         targetPos = new[] {raycast.Item2.point, raycast.Item2.normal};
                     }
                     else
                     {
-                        var raycast = Utilities.PerformRaycast(this.Origin.position, this.FreeAttachPart.transform.position, this.Origin.up, new[] {this.FreeAttachPart, this.part});
-                        targetPos = new[] {this.FreeAttachPart.transform.position, raycast.Hit.normal};
+                        var raycast = Utilities.PerformRaycast(Origin.position, FreeAttachPart.transform.position,
+                            Origin.up, new[] {FreeAttachPart, part});
+                        targetPos = new[] {FreeAttachPart.transform.position, raycast.Hit.normal};
                     }
-                    if (this._strutFinallyCreated && this.ModelFeatures[ModelFeaturesType.Strut] && !this.IsFlexible && (Vector3.Distance(targetPos[0], this._oldTargetPosition) <= Config.Instance.StrutRealignDistanceTolerance))
+                    if (strutFinallyCreated && ModelFeatures[ModelFeaturesType.Strut] && !IsFlexible &&
+                        (Vector3.Distance(targetPos[0], oldTargetPosition) <=
+                         Config.Instance.StrutRealignDistanceTolerance))
                     {
                         return;
                     }
-                    this._oldTargetPosition = targetPos[0];
-                    this.DestroyStrut();
-                    this.CreateStrut(targetPos[0]);
-                    this.ShowGrappler(true, targetPos[0], targetPos[0], false, targetPos[1], true);
-                    this.ShowHooks(true, targetPos[0], targetPos[1], true);
+                    oldTargetPosition = targetPos[0];
+                    DestroyStrut();
+                    CreateStrut(targetPos[0]);
+                    ShowGrappler(true, targetPos[0], targetPos[0], false, targetPos[1], true);
+                    ShowHooks(true, targetPos[0], targetPos[1], true);
                 }
             }
-            else if (!this.IsTargetOnly)
+            else if (!IsTargetOnly)
             {
-                if (this.Target == null || !this.IsConnectionOrigin)
+                if (Target == null || !IsConnectionOrigin)
                 {
                     return;
                 }
-                var refPos = this.IsFlexible ? this.Target.FlexOffsetOriginPosition : this.Target.ModelFeatures[ModelFeaturesType.HeadExtension] ? this.Target.StrutOrigin.position : this.Target.Origin.position;
-                if ((this._strutFinallyCreated && this.ModelFeatures[ModelFeaturesType.Strut] && !this.IsFlexible && Vector3.Distance(refPos, this._oldTargetPosition) <= Config.Instance.StrutRealignDistanceTolerance))
+                var refPos = IsFlexible
+                    ? Target.FlexOffsetOriginPosition
+                    : Target.ModelFeatures[ModelFeaturesType.HeadExtension]
+                        ? Target.StrutOrigin.position
+                        : Target.Origin.position;
+                if ((strutFinallyCreated && ModelFeatures[ModelFeaturesType.Strut] && !IsFlexible &&
+                     Vector3.Distance(refPos, oldTargetPosition) <= Config.Instance.StrutRealignDistanceTolerance))
                 {
                     return;
                 }
-                this._oldTargetPosition = refPos;
-                this.DestroyStrut();
-                if (this.IsFlexible)
+                oldTargetPosition = refPos;
+                DestroyStrut();
+                if (IsFlexible)
                 {
-                    this.CreateStrut(refPos);
+                    CreateStrut(refPos);
                 }
-                else if (this.Target.IsTargetOnly)
+                else if (Target.IsTargetOnly)
                 {
-                    this.CreateStrut(this.Target.ModelFeatures[ModelFeaturesType.HeadExtension] ? this.Target.StrutOrigin.position : this.Target.Origin.position);
-                    this.ShowGrappler(false, Vector3.zero, Vector3.zero, false, Vector3.zero);
+                    CreateStrut(Target.ModelFeatures[ModelFeaturesType.HeadExtension]
+                        ? Target.StrutOrigin.position
+                        : Target.Origin.position);
+                    ShowGrappler(false, Vector3.zero, Vector3.zero, false, Vector3.zero);
                 }
                 else
                 {
-                    var targetStrutPos = this.Target.ModelFeatures[ModelFeaturesType.HeadExtension] ? this.Target.StrutOrigin.position : this.Target.Origin.position;
-                    var localStrutPos = this.ModelFeatures[ModelFeaturesType.HeadExtension] ? this.StrutOrigin.position : this.Origin.position;
-                    this.Target.DestroyStrut();
-                    this.CreateStrut(targetStrutPos, 0.5f, -1*this.GrapplerOffset);
-                    this.Target.CreateStrut(localStrutPos, 0.5f, -1*this.GrapplerOffset);
-                    this.ShowHooks(false, Vector3.zero, Vector3.zero);
-                    this.Target.ShowHooks(false, Vector3.zero, Vector3.zero);
+                    var targetStrutPos = Target.ModelFeatures[ModelFeaturesType.HeadExtension]
+                        ? Target.StrutOrigin.position
+                        : Target.Origin.position;
+                    var localStrutPos = ModelFeatures[ModelFeaturesType.HeadExtension]
+                        ? StrutOrigin.position
+                        : Origin.position;
+                    Target.DestroyStrut();
+                    CreateStrut(targetStrutPos, 0.5f, -1*GrapplerOffset);
+                    Target.CreateStrut(localStrutPos, 0.5f, -1*GrapplerOffset);
+                    ShowHooks(false, Vector3.zero, Vector3.zero);
+                    Target.ShowHooks(false, Vector3.zero, Vector3.zero);
                     var grapplerTargetPos = ((targetStrutPos - localStrutPos)*0.5f) + localStrutPos;
-                    this.ShowGrappler(true, grapplerTargetPos, targetStrutPos, true, Vector3.zero);
-                    this.Target.ShowGrappler(true, grapplerTargetPos, localStrutPos, true, Vector3.zero);
+                    ShowGrappler(true, grapplerTargetPos, targetStrutPos, true, Vector3.zero);
+                    Target.ShowGrappler(true, grapplerTargetPos, localStrutPos, true, Vector3.zero);
                 }
             }
         }
 
         private void _showTargetGrappler(bool show)
         {
-            if (!this.IsTargetOnly || !this.ModelFeatures[ModelFeaturesType.Grappler])
+            if (!IsTargetOnly || !ModelFeatures[ModelFeaturesType.Grappler])
             {
                 return;
             }
-            if (show && !this._targetGrapplerVisible)
+            if (show && !targetGrapplerVisible)
             {
-                this.Grappler.Translate(new Vector3(-this.GrapplerOffset, 0, 0));
-                this._targetGrapplerVisible = true;
+                Grappler.Translate(new Vector3(-GrapplerOffset, 0, 0));
+                targetGrapplerVisible = true;
             }
-            else if (!show && this._targetGrapplerVisible)
+            else if (!show && targetGrapplerVisible)
             {
-                this.Grappler.Translate(new Vector3(this.GrapplerOffset, 0, 0));
-                this._targetGrapplerVisible = false;
+                Grappler.Translate(new Vector3(GrapplerOffset, 0, 0));
+                targetGrapplerVisible = false;
             }
         }
 
-        private void _transformLights(bool show, Vector3 lookAtTarget, bool bright = false)
+        private void TransformLights(bool show, Vector3 lookAtTarget, bool bright = false)
         {
-            if (!(this.ModelFeatures[ModelFeaturesType.LightsBright] && this.ModelFeatures[ModelFeaturesType.LightsDull]))
+            if (!(ModelFeatures[ModelFeaturesType.LightsBright] && ModelFeatures[ModelFeaturesType.LightsDull]))
             {
                 return;
             }
             if (!show)
             {
-                this.LightsBright.localScale = Vector3.zero;
-                this.LightsDull.localScale = Vector3.zero;
-                if (this._dullLightsExtended)
+                LightsBright.localScale = Vector3.zero;
+                LightsDull.localScale = Vector3.zero;
+                if (dullLightsExtended)
                 {
-                    this.LightsDull.Translate(new Vector3(this.LightsOffset, 0, 0));
-                    this._dullLightsExtended = false;
+                    LightsDull.Translate(new Vector3(LightsOffset, 0, 0));
+                    dullLightsExtended = false;
                 }
-                if (this._brightLightsExtended)
+                if (brightLightsExtended)
                 {
-                    this.LightsBright.Translate(new Vector3(this.LightsOffset, 0, 0));
-                    this._brightLightsExtended = false;
+                    LightsBright.Translate(new Vector3(LightsOffset, 0, 0));
+                    brightLightsExtended = false;
                 }
                 return;
             }
             if (bright)
             {
-                this.LightsDull.localScale = Vector3.zero;
-                this.LightsBright.LookAt(lookAtTarget);
-                this.LightsBright.Rotate(new Vector3(0, 1, 0), 90f);
-                this.LightsBright.localScale = new Vector3(1, 1, 1);
-                if (!this._brightLightsExtended)
+                LightsDull.localScale = Vector3.zero;
+                LightsBright.LookAt(lookAtTarget);
+                LightsBright.Rotate(new Vector3(0, 1, 0), 90f);
+                LightsBright.localScale = new Vector3(1, 1, 1);
+                if (!brightLightsExtended)
                 {
-                    this.LightsBright.Translate(new Vector3(-this.LightsOffset, 0, 0));
+                    LightsBright.Translate(new Vector3(-LightsOffset, 0, 0));
                 }
-                if (this._dullLightsExtended)
+                if (dullLightsExtended)
                 {
-                    this.LightsDull.Translate(new Vector3(this.LightsOffset, 0, 0));
+                    LightsDull.Translate(new Vector3(LightsOffset, 0, 0));
                 }
-                this._dullLightsExtended = false;
-                this._brightLightsExtended = true;
+                dullLightsExtended = false;
+                brightLightsExtended = true;
                 return;
             }
-            this.LightsBright.localScale = Vector3.zero;
-            this.LightsDull.LookAt(lookAtTarget);
-            this.LightsDull.Rotate(new Vector3(0, 1, 0), 90f);
-            this.LightsDull.position = this.Origin.position;
-            this.LightsDull.localScale = new Vector3(1, 1, 1);
-            if (!this._dullLightsExtended)
+            LightsBright.localScale = Vector3.zero;
+            LightsDull.LookAt(lookAtTarget);
+            LightsDull.Rotate(new Vector3(0, 1, 0), 90f);
+            LightsDull.position = Origin.position;
+            LightsDull.localScale = new Vector3(1, 1, 1);
+            if (!dullLightsExtended)
             {
-                this.LightsDull.Translate(new Vector3(-this.LightsOffset, 0, 0));
+                LightsDull.Translate(new Vector3(-LightsOffset, 0, 0));
             }
-            if (this._brightLightsExtended)
+            if (brightLightsExtended)
             {
-                this.LightsBright.Translate(new Vector3(this.LightsOffset, 0, 0));
+                LightsBright.Translate(new Vector3(LightsOffset, 0, 0));
             }
-            this._dullLightsExtended = true;
-            this._brightLightsExtended = false;
+            dullLightsExtended = true;
+            brightLightsExtended = false;
         }
 
-        private void _updateSimpleLights()
+        private void UpdateSimpleLights()
         {
             try
             {
-                if (!this.ModelFeatures[ModelFeaturesType.SimpleLights])
+                if (!ModelFeatures[ModelFeaturesType.SimpleLights])
                 {
                     return;
                 }
@@ -2073,22 +2178,18 @@ namespace ActiveStruts.Modules
                 return;
             }
             Color col;
-            if (this.IsLinked)
+            if (IsLinked)
             {
-                if (this.IsDocked)
-                {
-                    col = Utilities._setColorForEmissive(Color.blue);
-                }
-                else
-                {
-                    col = Utilities._setColorForEmissive(Color.green);
-                }
+                col = Utilities.SetColorForEmissive(IsDocked ? Color.blue : Color.green);
             }
             else
             {
-                col = Utilities._setColorForEmissive(Color.yellow);
+                col = Utilities.SetColorForEmissive(Color.yellow);
             }
-            foreach (var m in new[] {this._simpleLights, this._simpleLightsSecondary}.Select(lightTransform => lightTransform.renderer.material))
+            foreach (
+                var m in
+                    new[] {simpleLights, simpleLightsSecondary}.Select(
+                        lightTransform => lightTransform.renderer.material))
             {
                 m.SetColor("_Emissive", col);
                 m.SetColor("_MainTex", col);
@@ -2110,15 +2211,12 @@ namespace ActiveStruts.Modules
 
         private class OrientationInfo
         {
-            private bool Invert { get; set; }
-            private Orientations Orientation { get; set; }
-
             internal OrientationInfo(string stringToParse)
             {
                 if (string.IsNullOrEmpty(stringToParse))
                 {
-                    this.Orientation = Orientations.Up;
-                    this.Invert = false;
+                    Orientation = Orientations.Up;
+                    Invert = false;
                     return;
                 }
                 var substrings = stringToParse.Split(',').Select(s => s.Trim().ToUpperInvariant()).ToList();
@@ -2127,27 +2225,30 @@ namespace ActiveStruts.Modules
                     var oS = substrings[0];
                     if (oS == "RIGHT")
                     {
-                        this.Orientation = Orientations.Right;
+                        Orientation = Orientations.Right;
                     }
                     else if (oS == "FORWARD")
                     {
-                        this.Orientation = Orientations.Forward;
+                        Orientation = Orientations.Forward;
                     }
                     else
                     {
-                        this.Orientation = Orientations.Up;
+                        Orientation = Orientations.Up;
                     }
                     bool outBool;
                     bool.TryParse(substrings[1], out outBool);
-                    this.Invert = outBool;
+                    Invert = outBool;
                 }
             }
 
             internal OrientationInfo(Orientations orientation, bool invert)
             {
-                this.Orientation = orientation;
-                this.Invert = invert;
+                Orientation = orientation;
+                Invert = invert;
             }
+
+            private bool Invert { get; set; }
+            private Orientations Orientation { get; set; }
 
             internal Vector3 GetAxis(Transform transform)
             {
@@ -2156,7 +2257,7 @@ namespace ActiveStruts.Modules
                 {
                     return axis;
                 }
-                switch (this.Orientation)
+                switch (Orientation)
                 {
                     case Orientations.Forward:
                     {
@@ -2174,7 +2275,7 @@ namespace ActiveStruts.Modules
                     }
                         break;
                 }
-                axis = this.Invert ? axis*-1f : axis;
+                axis = Invert ? axis*-1f : axis;
                 return axis;
             }
         }

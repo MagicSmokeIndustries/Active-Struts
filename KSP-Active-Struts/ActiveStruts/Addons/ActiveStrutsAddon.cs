@@ -14,33 +14,34 @@ namespace ActiveStruts.Addons
     [KSPAddon(KSPAddon.Startup.EveryScene, false)]
     public class ActiveStrutsAddon : MonoBehaviour
     {
-        private const float MpToRayHitDistanceTolerance = 0.02f;
-        private const int UnusedTargetPartRemovalCounterInterval = 18000;
-        private static GameObject _connector;
-        private static object _idResetQueueLock;
-        private static object _targetDeleteListLock;
-        private static int _idResetCounter;
-        private static int _unusedTargetPartRemovalCounter;
-        private static bool _idResetTrimFlag;
-        private static bool _noInputAxesReset;
-        private static bool _partPlacementInProgress;
-        private HashSet<MouseOverHighlightData> _mouseOverPartsData;
-        private object _mouseOverSetLock;
-        private bool _resetAllHighlighting;
-        private List<StraightOutHintActivePart> _straightOutHintActiveParts;
-        private List<HighlightedPart> _targetHighlightedParts;
+        private const float MP_TO_RAY_HIT_DISTANCE_TOLERANCE = 0.02f;
+        private const int UNUSED_TARGET_PART_REMOVAL_COUNTER_INTERVAL = 18000;
+        private static GameObject connector;
+        private static object idResetQueueLock;
+        private static object targetDeleteListLock;
+        private static int idResetCounter;
+        private static int unusedTargetPartRemovalCounter;
+        private static bool idResetTrimFlag;
+        private static bool noInputAxesReset;
+        private static bool partPlacementInProgress;
+        private static Queue<IDResetable> idResetQueue;
+        private HashSet<MouseOverHighlightData> mouseOverPartsData;
+        private object mouseOverSetLock;
+        private bool resetAllHighlighting;
+        private List<StraightOutHintActivePart> straightOutHintActiveParts;
+        private List<HighlightedPart> targetHighlightedParts;
+
         public static ModuleKerbalHook CurrentKerbalTargeter { get; set; }
         public static ModuleActiveStrut CurrentTargeter { get; set; }
         public static bool FlexibleAttachActive { get; set; }
         public static AddonMode Mode { get; set; }
         public static Part NewSpawnedPart { get; set; }
         public static Vector3 Origin { get; set; }
-        private static Queue<IDResetable> _idResetQueue { get; set; }
 
         //must not be static
         private void ActionMenuClosed(Part data)
         {
-            if (!_checkForModule(data))
+            if (!CheckForModule(data))
             {
                 return;
             }
@@ -52,12 +53,12 @@ namespace ActiveStruts.Addons
             if (module.IsConnectionOrigin && module.Target != null)
             {
                 module.Target.part.SetHighlightDefault();
-                var part = this._targetHighlightedParts.Where(p => p.ModuleID == module.ID).Select(p => p).FirstOrDefault();
+                var part = targetHighlightedParts.Where(p => p.ModuleID == module.ID).Select(p => p).FirstOrDefault();
                 if (part != null)
                 {
                     try
                     {
-                        this._targetHighlightedParts.Remove(part);
+                        targetHighlightedParts.Remove(part);
                     }
                     catch (NullReferenceException)
                     {
@@ -73,19 +74,22 @@ namespace ActiveStruts.Addons
             {
                 return;
             }
-            var hintObj = this._straightOutHintActiveParts.Where(sohap => sohap.ModuleID == module.ID).Select(sohap => sohap).FirstOrDefault();
+            var hintObj =
+                straightOutHintActiveParts.Where(sohap => sohap.ModuleID == module.ID)
+                    .Select(sohap => sohap)
+                    .FirstOrDefault();
             if (hintObj == null)
             {
                 return;
             }
-            this._straightOutHintActiveParts.Remove(hintObj);
+            straightOutHintActiveParts.Remove(hintObj);
             Destroy(hintObj.HintObject);
         }
 
         //must not be static
         private void ActionMenuCreated(Part data)
         {
-            if (!_checkForModule(data))
+            if (!CheckForModule(data))
             {
                 return;
             }
@@ -98,17 +102,18 @@ namespace ActiveStruts.Addons
             {
                 module.Target.part.SetHighlightColor(Color.cyan);
                 module.Target.part.SetHighlight(true, false);
-                this._targetHighlightedParts.Add(new HighlightedPart(module.Target.part, module.ID));
+                targetHighlightedParts.Add(new HighlightedPart(module.Target.part, module.ID));
             }
             else if (module.Targeter != null && !module.IsConnectionOrigin)
             {
                 module.Targeter.part.SetHighlightColor(Color.cyan);
                 module.Targeter.part.SetHighlight(true, false);
-                this._targetHighlightedParts.Add(new HighlightedPart(module.Targeter.part, module.ID));
+                targetHighlightedParts.Add(new HighlightedPart(module.Targeter.part, module.ID));
             }
             if (Config.Instance.ShowStraightOutHint && !module.IsFlexible && !module.IsTargetOnly)
             {
-                this._straightOutHintActiveParts.Add(new StraightOutHintActivePart(data, module.ID, CreateStraightOutHintForPart(module), module));
+                straightOutHintActiveParts.Add(new StraightOutHintActivePart(data, module.ID,
+                    CreateStraightOutHintForPart(module), module));
             }
         }
 
@@ -126,7 +131,7 @@ namespace ActiveStruts.Addons
                     try
                     {
                         rP.AddModule("ModuleKerbalHook");
-                        this.StartCoroutine(this.CatchModuleAddedToEVA(rP));
+                        StartCoroutine(CatchModuleAddedToEVA(rP));
                     }
                     catch (NullReferenceException)
                     {
@@ -142,42 +147,45 @@ namespace ActiveStruts.Addons
             {
                 return;
             }
-            _unusedTargetPartRemovalCounter = HighLogic.LoadedSceneIsEditor ? 30 : 180;
+            unusedTargetPartRemovalCounter = HighLogic.LoadedSceneIsEditor ? 30 : 180;
             FlexibleAttachActive = false;
-            this._targetHighlightedParts = new List<HighlightedPart>();
-            this._straightOutHintActiveParts = new List<StraightOutHintActivePart>();
-            this._mouseOverSetLock = new object();
-            lock (this._mouseOverSetLock)
+            targetHighlightedParts = new List<HighlightedPart>();
+            straightOutHintActiveParts = new List<StraightOutHintActivePart>();
+            mouseOverSetLock = new object();
+            lock (mouseOverSetLock)
             {
-                this._mouseOverPartsData = new HashSet<MouseOverHighlightData>();
+                mouseOverPartsData = new HashSet<MouseOverHighlightData>();
             }
-            _connector = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            _connector.name = "ASConn";
-            DestroyImmediate(_connector.collider);
+            connector = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            connector.name = "ASConn";
+            DestroyImmediate(connector.collider);
             var connDim = Config.Instance.ConnectorDimension;
-            _connector.transform.localScale = new Vector3(connDim, connDim, connDim);
-            var mr = _connector.GetComponent<MeshRenderer>();
+            connector.transform.localScale = new Vector3(connDim, connDim, connDim);
+            var mr = connector.GetComponent<MeshRenderer>();
             mr.name = "ASConn";
-            mr.material = new Material(Shader.Find("Transparent/Diffuse")) {color = Color.green.MakeColorTransparent(Config.Instance.ColorTransparency)};
-            _connector.SetActive(false);
-            GameEvents.onPartActionUICreate.Add(this.ActionMenuCreated);
-            GameEvents.onPartActionUIDismiss.Add(this.ActionMenuClosed);
-            GameEvents.onCrewBoardVessel.Add(this.HandleEvaEnd);
+            mr.material = new Material(Shader.Find("Transparent/Diffuse"))
+            {
+                color = Color.green.MakeColorTransparent(Config.Instance.ColorTransparency)
+            };
+            connector.SetActive(false);
+            GameEvents.onPartActionUICreate.Add(ActionMenuCreated);
+            GameEvents.onPartActionUIDismiss.Add(ActionMenuClosed);
+            GameEvents.onCrewBoardVessel.Add(HandleEvaEnd);
             Mode = AddonMode.None;
             if (HighLogic.LoadedSceneIsEditor)
             {
-                GameEvents.onPartRemove.Add(this.HandleEditorPartDetach);
-                GameEvents.onPartAttach.Add(this.HandleEditorPartAttach);
-                _targetDeleteListLock = new object();
+                GameEvents.onPartRemove.Add(HandleEditorPartDetach);
+                GameEvents.onPartAttach.Add(HandleEditorPartAttach);
+                targetDeleteListLock = new object();
             }
             else if (HighLogic.LoadedSceneIsFlight)
             {
-                GameEvents.onPartAttach.Add(this.HandleFlightPartAttach);
-                GameEvents.onPartRemove.Add(this.HandleFlightPartAttach);
-                _idResetQueueLock = new object();
-                _idResetQueue = new Queue<IDResetable>(10);
-                _idResetCounter = Config.IdResetCheckInterval;
-                _idResetTrimFlag = false;
+                GameEvents.onPartAttach.Add(HandleFlightPartAttach);
+                GameEvents.onPartRemove.Add(HandleFlightPartAttach);
+                idResetQueueLock = new object();
+                idResetQueue = new Queue<IDResetable>(10);
+                idResetCounter = Config.ID_RESET_CHECK_INTERVAL;
+                idResetTrimFlag = false;
             }
         }
 
@@ -186,7 +194,7 @@ namespace ActiveStruts.Addons
             var run = true;
             while (run)
             {
-                ModuleKerbalHook module = null;
+                ModuleKerbalHook module;
                 if (rp.TryGetModule(out module))
                 {
                     Debug.Log("[AS] module found in part!");
@@ -210,24 +218,27 @@ namespace ActiveStruts.Addons
             go.transform.localScale = new Vector3(connDim, connDim, connDim);
             var mr = go.GetComponent<MeshRenderer>();
             mr.name = go.name;
-            mr.material = new Material(Shader.Find("Transparent/Diffuse")) {color = Color.blue.MakeColorTransparent(Config.Instance.ColorTransparency)};
+            mr.material = new Material(Shader.Find("Transparent/Diffuse"))
+            {
+                color = Color.blue.MakeColorTransparent(Config.Instance.ColorTransparency)
+            };
             UpdateStraightOutHint(module, go);
             return go;
         }
 
         public static IDResetable Dequeue()
         {
-            lock (_idResetQueueLock)
+            lock (idResetQueueLock)
             {
-                return _idResetQueue.Dequeue();
+                return idResetQueue.Dequeue();
             }
         }
 
         public static void Enqueue(IDResetable module)
         {
-            lock (_idResetQueueLock)
+            lock (idResetQueueLock)
             {
-                _idResetQueue.Enqueue(module);
+                idResetQueue.Enqueue(module);
             }
         }
 
@@ -242,9 +253,9 @@ namespace ActiveStruts.Addons
 
         public void Update()
         {
-            this._processUpdate();
+            ProcessUpdate();
             //if run in FixedUpdate transforms are offset in orbit around bodies without atmosphere
-            this._processFixedUpdate();
+            ProcessFixedUpdate();
         }
 
         private void HandleEditorPartAttach(GameEvents.HostTargetAction<Part, Part> data)
@@ -270,22 +281,24 @@ namespace ActiveStruts.Addons
                 child.RecursePartList(partList);
             }
             var movedModules = (from p in partList
-                                where p.Modules.Contains(Config.Instance.ModuleName)
-                                select p.Modules[Config.Instance.ModuleName] as ModuleActiveStrut).ToList();
+                where p.Modules.Contains(Config.Instance.ModuleName)
+                select p.Modules[Config.Instance.ModuleName] as ModuleActiveStrut).ToList();
             var movedTargets = (from p in partList
-                                where p.Modules.Contains(Config.Instance.ModuleActiveStrutFreeAttachTarget)
-                                select p.Modules[Config.Instance.ModuleActiveStrutFreeAttachTarget] as ModuleActiveStrutFreeAttachTarget).ToList();
+                where p.Modules.Contains(Config.Instance.ModuleActiveStrutFreeAttachTarget)
+                select p.Modules[Config.Instance.ModuleActiveStrutFreeAttachTarget] as ModuleActiveStrutFreeAttachTarget)
+                .ToList();
             var vesselModules = (from p in CIT_Util.Utilities.ListEditorParts(false)
-                                 where p.Modules.Contains(Config.Instance.ModuleName)
-                                 select p.Modules[Config.Instance.ModuleName] as ModuleActiveStrut).ToList();
+                where p.Modules.Contains(Config.Instance.ModuleName)
+                select p.Modules[Config.Instance.ModuleName] as ModuleActiveStrut).ToList();
             foreach (var module in movedModules)
             {
                 module.Unlink();
             }
             foreach (var module in vesselModules.Where(module =>
-                                                       (module.Target != null && movedModules.Any(m => m.ID == module.Target.ID) ||
-                                                        (module.Targeter != null && movedModules.Any(m => m.ID == module.Targeter.ID))) ||
-                                                       (module.IsFreeAttached && !module.StraightOutAttachAppliedInEditor && movedTargets.Any(t => t.ID == module.FreeAttachTarget.ID))))
+                (module.Target != null && movedModules.Any(m => m.ID == module.Target.ID) ||
+                 (module.Targeter != null && movedModules.Any(m => m.ID == module.Targeter.ID))) ||
+                (module.IsFreeAttached && !module.StraightOutAttachAppliedInEditor &&
+                 movedTargets.Any(t => t.ID == module.FreeAttachTarget.ID))))
             {
                 module.Unlink();
             }
@@ -347,7 +360,7 @@ namespace ActiveStruts.Addons
 
         private IEnumerator HighlightMouseOverPart(Part mouseOverPart)
         {
-            var lPart = this._getMohdForPart(mouseOverPart);
+            var lPart = GetMohdForPart(mouseOverPart);
             while (mouseOverPart != null && lPart != null && !lPart.Reset)
             {
                 lPart.Part.SetHighlightColor(Color.blue);
@@ -355,9 +368,9 @@ namespace ActiveStruts.Addons
                 lPart.Reset = true;
                 yield return new WaitForEndOfFrame();
                 //yield return new WaitForSeconds(0.1f);
-                lPart = this._getMohdForPart(mouseOverPart);
+                lPart = GetMohdForPart(mouseOverPart);
             }
-            this._removeMohdFromList(lPart);
+            RemoveMohdFromList(lPart);
             if (mouseOverPart != null)
             {
                 mouseOverPart.SetHighlightDefault();
@@ -366,9 +379,9 @@ namespace ActiveStruts.Addons
 
         private static bool IsQueueEmpty()
         {
-            lock (_idResetQueueLock)
+            lock (idResetQueueLock)
             {
-                return _idResetQueue.Count == 0;
+                return idResetQueue.Count == 0;
             }
         }
 
@@ -385,10 +398,13 @@ namespace ActiveStruts.Addons
                 {
                     if (raycast.HittedPart != null && raycast.HittedPart.Modules.Contains(Config.Instance.ModuleName))
                     {
-                        var moduleActiveStrut = raycast.HittedPart.Modules[Config.Instance.ModuleName] as ModuleActiveStrut;
+                        var moduleActiveStrut =
+                            raycast.HittedPart.Modules[Config.Instance.ModuleName] as ModuleActiveStrut;
                         if (moduleActiveStrut != null)
                         {
-                            valid &= raycast.HittedPart != null && raycast.HittedPart.Modules.Contains(Config.Instance.ModuleName) && moduleActiveStrut.IsConnectionFree;
+                            valid &= raycast.HittedPart != null &&
+                                     raycast.HittedPart.Modules.Contains(Config.Instance.ModuleName) &&
+                                     moduleActiveStrut.IsConnectionFree;
                             if (FlexibleAttachActive)
                             {
                                 valid &= moduleActiveStrut.IsFlexible;
@@ -399,9 +415,11 @@ namespace ActiveStruts.Addons
                     break;
                 case AddonMode.FreeAttach:
                 {
-                    var tPos = CurrentTargeter.ModelFeatures[ModuleActiveStrut.ModelFeaturesType.HeadExtension] ? CurrentTargeter.StrutOrigin.position : CurrentTargeter.Origin.position;
+                    var tPos = CurrentTargeter.ModelFeatures[ModuleActiveStrut.ModelFeaturesType.HeadExtension]
+                        ? CurrentTargeter.StrutOrigin.position
+                        : CurrentTargeter.Origin.position;
                     var mPosDist = Vector3.Distance(tPos, mp);
-                    valid &= Mathf.Abs(mPosDist - raycast.DistanceFromOrigin) < MpToRayHitDistanceTolerance;
+                    valid &= Mathf.Abs(mPosDist - raycast.DistanceFromOrigin) < MP_TO_RAY_HIT_DISTANCE_TOLERANCE;
                 }
                     break;
                 case AddonMode.AttachKerbalHook:
@@ -409,7 +427,9 @@ namespace ActiveStruts.Addons
                     valid &= raycast.HittedPart != null
                              && raycast.HittedPart.vessel != null
                              && raycast.HittedPart.vessel != FlightGlobals.ActiveVessel
-                             && Mathf.Abs(Vector3.Distance(CurrentKerbalTargeter.part.transform.position, mp) - raycast.DistanceFromOrigin) < MpToRayHitDistanceTolerance;
+                             &&
+                             Mathf.Abs(Vector3.Distance(CurrentKerbalTargeter.part.transform.position, mp) -
+                                       raycast.DistanceFromOrigin) < MP_TO_RAY_HIT_DISTANCE_TOLERANCE;
                 }
                     break;
             }
@@ -418,13 +438,13 @@ namespace ActiveStruts.Addons
 
         public void OnDestroy()
         {
-            GameEvents.onPartActionUICreate.Remove(this.ActionMenuCreated);
-            GameEvents.onPartActionUIDismiss.Remove(this.ActionMenuClosed);
-            GameEvents.onPartRemove.Remove(this.HandleEditorPartDetach);
-            GameEvents.onPartUndock.Remove(this.HandleFlightPartUndock);
-            GameEvents.onPartAttach.Remove(this.HandleFlightPartAttach);
-            GameEvents.onPartAttach.Remove(this.HandleEditorPartAttach);
-            GameEvents.onCrewBoardVessel.Remove(this.HandleEvaEnd);
+            GameEvents.onPartActionUICreate.Remove(ActionMenuCreated);
+            GameEvents.onPartActionUIDismiss.Remove(ActionMenuClosed);
+            GameEvents.onPartRemove.Remove(HandleEditorPartDetach);
+            GameEvents.onPartUndock.Remove(HandleFlightPartUndock);
+            GameEvents.onPartAttach.Remove(HandleFlightPartAttach);
+            GameEvents.onPartAttach.Remove(HandleEditorPartAttach);
+            GameEvents.onCrewBoardVessel.Remove(HandleEvaEnd);
         }
 
         public static IEnumerator PlaceNewPart(Part hittedPart, RaycastHit hit)
@@ -443,8 +463,12 @@ namespace ActiveStruts.Addons
             NewSpawnedPart.transform.rotation = raycast.HittedPart.transform.rotation;
             NewSpawnedPart.transform.position = raycast.Hit.point;
 
-            NewSpawnedPart.transform.LookAt(Mode == AddonMode.AttachKerbalHook ? CurrentKerbalTargeter.transform.position : CurrentTargeter.transform.position);
-            NewSpawnedPart.transform.rotation = Quaternion.FromToRotation(NewSpawnedPart.transform.up, raycast.Hit.normal)*NewSpawnedPart.transform.rotation;
+            NewSpawnedPart.transform.LookAt(Mode == AddonMode.AttachKerbalHook
+                ? CurrentKerbalTargeter.transform.position
+                : CurrentTargeter.transform.position);
+            NewSpawnedPart.transform.rotation =
+                Quaternion.FromToRotation(NewSpawnedPart.transform.up, raycast.Hit.normal)*
+                NewSpawnedPart.transform.rotation;
 
             yield return new WaitForFixedUpdate();
             var targetModuleName = Config.Instance.ModuleActiveStrutFreeAttachTarget;
@@ -465,7 +489,12 @@ namespace ActiveStruts.Addons
                         var dockingVesselName = activeVessel.GetName();
                         var dockingVesselType = activeVessel.vesselType;
                         var dockingVesselId = activeVessel.rootPart.flightID;
-                        var vesselInfo = new DockedVesselInfo {name = dockingVesselName, vesselType = dockingVesselType, rootPartUId = dockingVesselId};
+                        var vesselInfo = new DockedVesselInfo
+                        {
+                            name = dockingVesselName,
+                            vesselType = dockingVesselType,
+                            rootPartUId = dockingVesselId
+                        };
                         targetModule.part.Couple(activeVessel.rootPart);
                         targetModule.part.Undock(vesselInfo);
                     }
@@ -491,22 +520,23 @@ namespace ActiveStruts.Addons
             {
                 CurrentTargeter.PlaceFreeAttach(NewSpawnedPart);
             }
-            _partPlacementInProgress = false;
+            partPlacementInProgress = false;
             NewSpawnedPart = null;
         }
 
         private static void TrimQueue()
         {
-            lock (_idResetQueueLock)
+            lock (idResetQueueLock)
             {
-                _idResetQueue.TrimExcess();
+                idResetQueue.TrimExcess();
             }
         }
 
         private static void UpdateStraightOutHint(ModuleActiveStrut module, GameObject hint)
         {
             hint.SetActive(false);
-            var rayres = Utilities.PerformRaycastIntoDir(module.Origin.position, module.RealModelForward, module.RealModelForward, module.part);
+            var rayres = Utilities.PerformRaycastIntoDir(module.Origin.position, module.RealModelForward,
+                module.RealModelForward, module.part);
             var trans = hint.transform;
             trans.position = module.Origin.position;
             var dist = rayres.HitResult ? rayres.DistanceFromOrigin/2f : Config.Instance.MaxDistance;
@@ -516,7 +546,8 @@ namespace ActiveStruts.Addons
             }
             else
             {
-                trans.LookAt(module.Origin.transform.position + (module.IsFlexible ? module.Origin.up : module.RealModelForward));
+                trans.LookAt(module.Origin.transform.position +
+                             (module.IsFlexible ? module.Origin.up : module.RealModelForward));
             }
             trans.Rotate(new Vector3(0, 1, 0), 90f);
             trans.Rotate(new Vector3(0, 0, 1), 90f);
@@ -525,15 +556,18 @@ namespace ActiveStruts.Addons
             hint.SetActive(true);
         }
 
-        private void _checkForInEditorAbort()
+        private void CheckForInEditorAbort()
         {
             if (!HighLogic.LoadedSceneIsEditor)
             {
                 return;
             }
-            if (EditorLogic.SelectedPart != null && EditorLogic.SelectedPart.Modules.Contains(Config.Instance.ModuleActiveStrutFreeAttachTarget))
+            if (EditorLogic.SelectedPart != null &&
+                EditorLogic.SelectedPart.Modules.Contains(Config.Instance.ModuleActiveStrutFreeAttachTarget))
             {
-                var module = EditorLogic.SelectedPart.Modules[Config.Instance.ModuleActiveStrutFreeAttachTarget] as ModuleActiveStrutFreeAttachTarget;
+                var module =
+                    EditorLogic.SelectedPart.Modules[Config.Instance.ModuleActiveStrutFreeAttachTarget] as
+                        ModuleActiveStrutFreeAttachTarget;
                 if (module != null)
                 {
                     module.Die();
@@ -541,7 +575,7 @@ namespace ActiveStruts.Addons
             }
         }
 
-        private static bool _checkForModule(Part part)
+        private static bool CheckForModule(Part part)
         {
             return part.Modules.Contains(Config.Instance.ModuleName);
         }
@@ -549,15 +583,15 @@ namespace ActiveStruts.Addons
         private static bool _determineColor(Vector3 mp, RaycastResult raycast)
         {
             var validPosition = IsValidPosition(raycast, mp);
-            var mr = _connector.GetComponent<MeshRenderer>();
+            var mr = connector.GetComponent<MeshRenderer>();
             mr.material.color =
                 (validPosition
-                     ? (Mode == AddonMode.Link && !raycast.HittedPart.Modules.Contains(Config.Instance.ModuleName)) ||
-                       ((Mode == AddonMode.FreeAttach || Mode == AddonMode.AttachKerbalHook) &&
-                        (raycast.HittedPart.Modules.Contains(Config.Instance.ModuleName)))
-                           ? Color.yellow
-                           : Color.green
-                     : Color.red).MakeColorTransparent(Config.Instance.ColorTransparency);
+                    ? (Mode == AddonMode.Link && !raycast.HittedPart.Modules.Contains(Config.Instance.ModuleName)) ||
+                      ((Mode == AddonMode.FreeAttach || Mode == AddonMode.AttachKerbalHook) &&
+                       (raycast.HittedPart.Modules.Contains(Config.Instance.ModuleName)))
+                        ? Color.yellow
+                        : Color.green
+                    : Color.red).MakeColorTransparent(Config.Instance.ColorTransparency);
             if (Mode == AddonMode.FreeAttach || Mode == AddonMode.AttachKerbalHook)
             {
                 validPosition = validPosition && !raycast.HittedPart.Modules.Contains(Config.Instance.ModuleName);
@@ -565,21 +599,22 @@ namespace ActiveStruts.Addons
             return validPosition;
         }
 
-        private MouseOverHighlightData _getMohdForPart(Part mopart)
+        private MouseOverHighlightData GetMohdForPart(Part mopart)
         {
             if (mopart == null)
             {
                 return null;
             }
-            lock (this._mouseOverSetLock)
+            lock (mouseOverSetLock)
             {
-                return this._mouseOverPartsData.FirstOrDefault(mohd => mohd.Part == mopart);
+                return mouseOverPartsData.FirstOrDefault(mohd => mohd.Part == mopart);
             }
         }
 
-        private static void _highlightCurrentTargets()
+        private static void HighlightCurrentTargets()
         {
-            var targets = Utilities.GetAllActiveStruts().Where(m => m.Mode == Util.Mode.Target).Select(m => m.part).ToList();
+            var targets =
+                Utilities.GetAllActiveStruts().Where(m => m.Mode == Util.Mode.Target).Select(m => m.part).ToList();
             foreach (var part in targets)
             {
                 part.SetHighlightColor(Color.green);
@@ -587,15 +622,15 @@ namespace ActiveStruts.Addons
             }
         }
 
-        private void _pointToMousePosition(Vector3 mp, RaycastResult rayRes)
+        private void PointToMousePosition(Vector3 mp, RaycastResult rayRes)
         {
             var startPos = Mode == AddonMode.AttachKerbalHook
-                               ? CurrentKerbalTargeter.transform.position
-                               : (CurrentTargeter.ModelFeatures[ModuleActiveStrut.ModelFeaturesType.HeadExtension]
-                                      ? CurrentTargeter.StrutOrigin.position
-                                      : CurrentTargeter.Origin.position);
-            _connector.SetActive(true);
-            var trans = _connector.transform;
+                ? CurrentKerbalTargeter.transform.position
+                : (CurrentTargeter.ModelFeatures[ModuleActiveStrut.ModelFeaturesType.HeadExtension]
+                    ? CurrentTargeter.StrutOrigin.position
+                    : CurrentTargeter.Origin.position);
+            connector.SetActive(true);
+            var trans = connector.transform;
             trans.position = startPos;
             trans.LookAt(mp);
             trans.localScale = new Vector3(trans.position.x, trans.position.y, 1);
@@ -617,15 +652,15 @@ namespace ActiveStruts.Addons
             //}
         }
 
-        private void _processFixedUpdate()
+        private void ProcessFixedUpdate()
         {
-            if (_unusedTargetPartRemovalCounter > 0)
+            if (unusedTargetPartRemovalCounter > 0)
             {
-                _unusedTargetPartRemovalCounter--;
+                unusedTargetPartRemovalCounter--;
             }
             else
             {
-                _unusedTargetPartRemovalCounter = UnusedTargetPartRemovalCounterInterval;
+                unusedTargetPartRemovalCounter = UNUSED_TARGET_PART_REMOVAL_COUNTER_INTERVAL;
                 try
                 {
                     Utilities.RemoveAllUntargetedFreeAttachTargetsInLoadRange();
@@ -643,9 +678,9 @@ namespace ActiveStruts.Addons
             if (activeVessel == null || !activeVessel.isEVA)
             {
                 foreach (var module in FlightGlobals.Vessels
-                                                    .Where(v => v.loaded && v.isEVA)
-                                                    .Select(v => v.rootPart.FindModuleImplementing<ModuleKerbalHook>())
-                                                    .Where(module => module != null))
+                    .Where(v => v.loaded && v.isEVA)
+                    .Select(v => v.rootPart.FindModuleImplementing<ModuleKerbalHook>())
+                    .Where(module => module != null))
                 {
                     module.OnFixedUpdate();
                 }
@@ -660,7 +695,7 @@ namespace ActiveStruts.Addons
                 {
                     rP.AddModule("ModuleKerbalHook");
                     Debug.Log("[AS] module added to EVA root part");
-                    this.StartCoroutine(this.CatchModuleAddedToEVA(rP));
+                    StartCoroutine(CatchModuleAddedToEVA(rP));
                 }
                 catch (NullReferenceException e)
                 {
@@ -676,7 +711,7 @@ namespace ActiveStruts.Addons
             }
         }
 
-        private void _processFreeAttachPlacement(RaycastResult raycast)
+        private void ProcessFreeAttachPlacement(RaycastResult raycast)
         {
             if (NewSpawnedPart == null)
             {
@@ -692,22 +727,22 @@ namespace ActiveStruts.Addons
                 Debug.Log("[AS][ERR] no target part ready - aborting FreeAttach");
                 return;
             }
-            if (_partPlacementInProgress)
+            if (partPlacementInProgress)
             {
                 return;
             }
-            _partPlacementInProgress = true;
-            this.StartCoroutine(PlaceNewPart(raycast));
+            partPlacementInProgress = true;
+            StartCoroutine(PlaceNewPart(raycast));
         }
 
         private static void _processIdResets()
         {
-            if (_idResetCounter > 0)
+            if (idResetCounter > 0)
             {
-                _idResetCounter--;
+                idResetCounter--;
                 return;
             }
-            _idResetCounter = Config.IdResetCheckInterval;
+            idResetCounter = Config.ID_RESET_CHECK_INTERVAL;
             var updateFlag = false;
             while (!IsQueueEmpty())
             {
@@ -722,17 +757,17 @@ namespace ActiveStruts.Addons
             {
                 Debug.Log("[AS] IDs have been updated.");
             }
-            if (_idResetTrimFlag)
+            if (idResetTrimFlag)
             {
                 TrimQueue();
             }
             else
             {
-                _idResetTrimFlag = true;
+                idResetTrimFlag = true;
             }
         }
 
-        private void _processUpdate()
+        private void ProcessUpdate()
         {
             try
             {
@@ -743,8 +778,9 @@ namespace ActiveStruts.Addons
                         var justDestroyPart = false;
                         if (CurrentTargeter != null || CurrentKerbalTargeter != null)
                         {
-                            // ReSharper disable once PossibleNullReferenceException - is checked
-                            NewSpawnedPart.transform.position = CurrentKerbalTargeter != null ? CurrentKerbalTargeter.transform.position : CurrentTargeter.transform.position;
+                            NewSpawnedPart.transform.position = CurrentKerbalTargeter != null
+                                ? CurrentKerbalTargeter.transform.position
+                                : CurrentTargeter.transform.position;
                         }
                         else
                         {
@@ -774,11 +810,11 @@ namespace ActiveStruts.Addons
                     }
                     _processIdResets();
                 }
-                if (Config.Instance.ShowStraightOutHint && this._straightOutHintActiveParts != null)
+                if (Config.Instance.ShowStraightOutHint && straightOutHintActiveParts != null)
                 {
                     var remList = new List<StraightOutHintActivePart>();
                     var renewList = new List<StraightOutHintActivePart>();
-                    foreach (var straightOutHintActivePart in this._straightOutHintActiveParts)
+                    foreach (var straightOutHintActivePart in straightOutHintActiveParts)
                     {
                         if (straightOutHintActivePart.HasToBeRemoved)
                         {
@@ -791,7 +827,7 @@ namespace ActiveStruts.Addons
                     }
                     foreach (var straightOutHintActivePart in remList)
                     {
-                        this._straightOutHintActiveParts.Remove(straightOutHintActivePart);
+                        straightOutHintActiveParts.Remove(straightOutHintActivePart);
                         Destroy(straightOutHintActivePart.HintObject);
                     }
                     foreach (var straightOutHintActivePart in renewList)
@@ -800,18 +836,21 @@ namespace ActiveStruts.Addons
                     }
                 }
                 var resetList = new List<HighlightedPart>();
-                if (this._targetHighlightedParts != null)
+                if (targetHighlightedParts != null)
                 {
-                    resetList = this._targetHighlightedParts.Where(targetHighlightedPart => targetHighlightedPart != null && targetHighlightedPart.HasToBeRemoved).ToList();
+                    resetList =
+                        targetHighlightedParts.Where(
+                            targetHighlightedPart =>
+                                targetHighlightedPart != null && targetHighlightedPart.HasToBeRemoved).ToList();
                 }
                 foreach (var targetHighlightedPart in resetList)
                 {
                     targetHighlightedPart.Part.SetHighlightDefault();
                     try
                     {
-                        if (this._targetHighlightedParts != null)
+                        if (targetHighlightedParts != null)
                         {
-                            this._targetHighlightedParts.Remove(targetHighlightedPart);
+                            targetHighlightedParts.Remove(targetHighlightedPart);
                         }
                     }
                     catch (NullReferenceException)
@@ -819,9 +858,9 @@ namespace ActiveStruts.Addons
                         //multithreading issue occured here, don't know if fixed
                     }
                 }
-                if (this._targetHighlightedParts != null)
+                if (targetHighlightedParts != null)
                 {
-                    foreach (var targetHighlightedPart in this._targetHighlightedParts)
+                    foreach (var targetHighlightedPart in targetHighlightedParts)
                     {
                         var part = targetHighlightedPart.Part;
                         part.SetHighlightColor(Color.cyan);
@@ -830,37 +869,40 @@ namespace ActiveStruts.Addons
                 }
                 if (Mode == AddonMode.None || (CurrentTargeter == null && CurrentKerbalTargeter == null))
                 {
-                    if (this._resetAllHighlighting)
+                    if (resetAllHighlighting)
                     {
-                        this._resetAllHighlighting = false;
+                        resetAllHighlighting = false;
                         var asList = Utilities.GetAllActiveStruts();
                         foreach (var moduleActiveStrut in asList)
                         {
                             moduleActiveStrut.part.SetHighlightDefault();
                         }
                     }
-                    if (_connector != null)
+                    if (connector != null)
                     {
-                        _connector.SetActive(false);
+                        connector.SetActive(false);
                     }
                     return;
                 }
-                this._resetAllHighlighting = true;
+                resetAllHighlighting = true;
                 if (Mode == AddonMode.Link)
                 {
-                    _highlightCurrentTargets();
+                    HighlightCurrentTargets();
                 }
                 var mp = Utilities.GetMouseWorldPosition();
                 var transformForRaycast = Mode == AddonMode.AttachKerbalHook
-                                              ? CurrentKerbalTargeter.transform
-                                              : CurrentTargeter.ModelFeatures[ModuleActiveStrut.ModelFeaturesType.HeadExtension]
-                                                    ? CurrentTargeter.StrutOrigin
-                                                    : CurrentTargeter.Origin;
+                    ? CurrentKerbalTargeter.transform
+                    : CurrentTargeter.ModelFeatures[ModuleActiveStrut.ModelFeaturesType.HeadExtension]
+                        ? CurrentTargeter.StrutOrigin
+                        : CurrentTargeter.Origin;
                 var rightDir = Mode == AddonMode.AttachKerbalHook ? Vector3.zero : CurrentTargeter.RealModelForward;
                 var raycast = Mode == AddonMode.AttachKerbalHook
-                                  ? Utilities.PerformRaycastFromKerbal(transformForRaycast.position, mp.Item1, transformForRaycast.up, CurrentKerbalTargeter.part.vessel)
-                                  : Utilities.PerformRaycast(transformForRaycast.position, mp.Item1, CurrentTargeter.IsFlexible ? transformForRaycast.up : rightDir, CurrentTargeter.IsFlexible ? CurrentTargeter.part : null);
-                this._pointToMousePosition(mp.Item1, raycast);
+                    ? Utilities.PerformRaycastFromKerbal(transformForRaycast.position, mp.Item1, transformForRaycast.up,
+                        CurrentKerbalTargeter.part.vessel)
+                    : Utilities.PerformRaycast(transformForRaycast.position, mp.Item1,
+                        CurrentTargeter.IsFlexible ? transformForRaycast.up : rightDir,
+                        CurrentTargeter.IsFlexible ? CurrentTargeter.part : null);
+                PointToMousePosition(mp.Item1, raycast);
                 if (!raycast.HitResult)
                 {
                     var handled = false;
@@ -870,7 +912,8 @@ namespace ActiveStruts.Addons
                         CurrentTargeter.UpdateGui();
                         handled = true;
                     }
-                    if ((Mode == AddonMode.FreeAttach || Mode == AddonMode.AttachKerbalHook) && (Input.GetKeyDown(KeyCode.X) || Input.GetKeyDown(KeyCode.Escape)))
+                    if ((Mode == AddonMode.FreeAttach || Mode == AddonMode.AttachKerbalHook) &&
+                        (Input.GetKeyDown(KeyCode.X) || Input.GetKeyDown(KeyCode.Escape)))
                     {
                         if (HighLogic.LoadedSceneIsFlight && Input.GetKeyDown(KeyCode.Escape))
                         {
@@ -887,10 +930,10 @@ namespace ActiveStruts.Addons
                             CurrentTargeter.AbortLink();
                             CurrentTargeter = null;
                         }
-                        this._checkForInEditorAbort();
+                        CheckForInEditorAbort();
                         handled = true;
                     }
-                    _connector.SetActive(false);
+                    connector.SetActive(false);
                     if (HighLogic.LoadedSceneIsEditor && handled)
                     {
                         Input.ResetInputAxes();
@@ -902,14 +945,14 @@ namespace ActiveStruts.Addons
                 if (validPos && Mode == AddonMode.FreeAttach && HighLogic.LoadedSceneIsEditor)
                 {
                     InputLockManager.RemoveControlLock(Config.Instance.EditorInputLockId);
-                    _noInputAxesReset = true;
+                    noInputAxesReset = true;
                 }
                 else if (HighLogic.LoadedSceneIsEditor)
                 {
                     InputLockManager.SetControlLock(Config.Instance.EditorInputLockId);
-                    _noInputAxesReset = false;
+                    noInputAxesReset = false;
                 }
-                this._processUserInput(mp.Item1, raycast, validPos);
+                ProcessUserInput(mp.Item1, raycast, validPos);
             }
             catch (NullReferenceException e)
             {
@@ -924,7 +967,7 @@ namespace ActiveStruts.Addons
             }
         }
 
-        private void _processUserInput(Vector3 mp, RaycastResult raycast, bool validPos)
+        private void ProcessUserInput(Vector3 mp, RaycastResult raycast, bool validPos)
         {
             var handled = false;
             switch (Mode)
@@ -935,7 +978,8 @@ namespace ActiveStruts.Addons
                     {
                         if (validPos && raycast.HittedPart.Modules.Contains(Config.Instance.ModuleName))
                         {
-                            var moduleActiveStrut = raycast.HittedPart.Modules[Config.Instance.ModuleName] as ModuleActiveStrut;
+                            var moduleActiveStrut =
+                                raycast.HittedPart.Modules[Config.Instance.ModuleName] as ModuleActiveStrut;
                             if (moduleActiveStrut != null)
                             {
                                 moduleActiveStrut.SetAsTarget();
@@ -963,7 +1007,7 @@ namespace ActiveStruts.Addons
                         {
                             if (HighLogic.LoadedSceneIsFlight)
                             {
-                                this._processFreeAttachPlacement(raycast);
+                                ProcessFreeAttachPlacement(raycast);
                             }
                             handled = true;
                         }
@@ -983,7 +1027,7 @@ namespace ActiveStruts.Addons
                             CurrentTargeter.AbortLink();
                             CurrentTargeter = null;
                         }
-                        this._checkForInEditorAbort();
+                        CheckForInEditorAbort();
                         Mode = AddonMode.None;
                         handled = true;
                     }
@@ -992,7 +1036,7 @@ namespace ActiveStruts.Addons
             }
             if (HighLogic.LoadedSceneIsEditor && handled)
             {
-                if (!_noInputAxesReset)
+                if (!noInputAxesReset)
                 {
                     Input.ResetInputAxes();
                 }
@@ -1000,48 +1044,56 @@ namespace ActiveStruts.Addons
             }
         }
 
-        private void _removeMohdFromList(MouseOverHighlightData mohd)
+        private void RemoveMohdFromList(MouseOverHighlightData mohd)
         {
             if (mohd == null)
             {
                 return;
             }
-            lock (this._mouseOverSetLock)
+            lock (mouseOverSetLock)
             {
-                this._mouseOverPartsData.Remove(mohd);
+                mouseOverPartsData.Remove(mohd);
             }
         }
 
-        private bool _setMouseOverPart(Part mopart)
+        private bool SetMouseOverPart(Part mopart)
         {
-            lock (this._mouseOverSetLock)
+            lock (mouseOverSetLock)
             {
-                var lp = this._mouseOverPartsData.FirstOrDefault(mohd => mohd.Part == mopart);
+                var lp = mouseOverPartsData.FirstOrDefault(mohd => mohd.Part == mopart);
                 if (lp != null)
                 {
                     lp.Reset = false;
                     return true;
                 }
-                this._mouseOverPartsData.Add(new MouseOverHighlightData(mopart));
+                mouseOverPartsData.Add(new MouseOverHighlightData(mopart));
                 return false;
             }
         }
 
         private class MouseOverHighlightData
         {
-            internal Part Part { get; private set; }
-            internal bool Reset { get; set; }
-
             internal MouseOverHighlightData(Part part)
             {
-                this.Part = part;
-                this.Reset = false;
+                Part = part;
+                Reset = false;
             }
+
+            internal Part Part { get; private set; }
+            internal bool Reset { get; set; }
         }
     }
 
     public class HighlightedPart
     {
+        public HighlightedPart(Part part, Guid moduleId)
+        {
+            Part = part;
+            HighlightStartTime = DateTime.Now;
+            ModuleID = moduleId;
+            Duration = Config.Instance.TargetHighlightDuration;
+        }
+
         public int Duration { get; set; }
 
         public bool HasToBeRemoved
@@ -1049,35 +1101,28 @@ namespace ActiveStruts.Addons
             get
             {
                 var now = DateTime.Now;
-                var dur = (now - this.HighlightStartTime).TotalSeconds;
-                return dur >= this.Duration;
+                var dur = (now - HighlightStartTime).TotalSeconds;
+                return dur >= Duration;
             }
         }
 
         public DateTime HighlightStartTime { get; set; }
         public Guid ModuleID { get; set; }
         public Part Part { get; set; }
-
-        public HighlightedPart(Part part, Guid moduleId)
-        {
-            this.Part = part;
-            this.HighlightStartTime = DateTime.Now;
-            this.ModuleID = moduleId;
-            this.Duration = Config.Instance.TargetHighlightDuration;
-        }
     }
 
     public class StraightOutHintActivePart : HighlightedPart
     {
+        public StraightOutHintActivePart(Part part, Guid moduleId, GameObject hintObject, ModuleActiveStrut module)
+            : base(part, moduleId)
+        {
+            HintObject = hintObject;
+            Module = module;
+            Duration = Config.Instance.StraightOutHintDuration;
+        }
+
         public GameObject HintObject { get; set; }
         public ModuleActiveStrut Module { get; set; }
-
-        public StraightOutHintActivePart(Part part, Guid moduleId, GameObject hintObject, ModuleActiveStrut module) : base(part, moduleId)
-        {
-            this.HintObject = hintObject;
-            this.Module = module;
-            this.Duration = Config.Instance.StraightOutHintDuration;
-        }
     }
 
     public enum AddonMode
@@ -1090,13 +1135,13 @@ namespace ActiveStruts.Addons
 
     internal struct LayerBackup
     {
-        internal int Layer { get; private set; }
-        internal Part Part { get; private set; }
-
         internal LayerBackup(int layer, Part part) : this()
         {
-            this.Layer = layer;
-            this.Part = part;
+            Layer = layer;
+            Part = part;
         }
+
+        internal int Layer { get; private set; }
+        internal Part Part { get; private set; }
     }
 }

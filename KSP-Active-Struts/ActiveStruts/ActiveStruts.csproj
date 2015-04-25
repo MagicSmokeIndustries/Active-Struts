@@ -36,7 +36,7 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="CITUtil">
-      <HintPath>..\..\KSP-CIT-Util\KSP-CIT-Util\bin\Release\CITUtil.dll</HintPath>
+      <HintPath>..\..\KSP-CIT-Util\KSP-CIT-Util\bin\Debug\CITUtil.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
@@ -64,6 +64,7 @@
     <Compile Include="Util\OSD.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Util\RotationAngleHelper.cs" />
+    <Compile Include="Util\SettingsEntry.cs" />
     <Compile Include="Util\Utilities.cs" />
   </ItemGroup>
   <ItemGroup>
