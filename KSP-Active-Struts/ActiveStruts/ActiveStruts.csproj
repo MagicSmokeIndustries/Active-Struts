@@ -35,10 +35,6 @@
       <HintPath>..\..\..\KSP_LIB\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="CITUtil">
-      <HintPath>..\..\KSP-CIT-Util\KSP-CIT-Util\bin\Debug\CITUtil.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -71,6 +67,12 @@
     <Content Include="License.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\KSP-CIT-Util\KSP-CIT-Util\KSP-CIT-Util.csproj">
+      <Project>{d4572eb5-9208-4076-9084-25da25f4c9e2}</Project>
+      <Name>KSP-CIT-Util</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
