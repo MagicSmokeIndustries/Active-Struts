@@ -9,8 +9,6 @@ using System.Collections.Generic;
 using System.Linq;
 using ActiveStruts.Addons;
 using ActiveStruts.Util;
-using CIT_Util;
-using CIT_Util.Types;
 using UnityEngine;
 using OSD = ActiveStruts.Util.OSD;
 using Utilities = ActiveStruts.Util.Utilities;

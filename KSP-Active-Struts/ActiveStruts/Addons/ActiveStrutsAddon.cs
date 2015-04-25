@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using ActiveStruts.Modules;
 using ActiveStruts.Util;
-using CIT_Util;
-using CIT_Util.Types;
 using UnityEngine;
 using Utilities = ActiveStruts.Util.Utilities;
 
@@ -287,7 +285,7 @@ namespace ActiveStruts.Addons
                 where p.Modules.Contains(Config.Instance.ModuleActiveStrutFreeAttachTarget)
                 select p.Modules[Config.Instance.ModuleActiveStrutFreeAttachTarget] as ModuleActiveStrutFreeAttachTarget)
                 .ToList();
-            var vesselModules = (from p in CIT_Util.Utilities.ListEditorParts(false)
+            var vesselModules = (from p in Utilities.ListEditorParts(false)
                 where p.Modules.Contains(Config.Instance.ModuleName)
                 select p.Modules[Config.Instance.ModuleName] as ModuleActiveStrut).ToList();
             foreach (var module in movedModules)

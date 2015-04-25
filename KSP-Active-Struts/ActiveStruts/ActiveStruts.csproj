@@ -53,26 +53,25 @@
     <Compile Include="Modules\ModuleAutoStrutter.cs" />
     <Compile Include="Modules\ModuleKerbalHook.cs" />
     <Compile Include="Modules\ModuleKerbalHookAnchor.cs" />
+    <Compile Include="PartFactory.cs" />
+    <Compile Include="Util\ColorExtenstions.cs" />
     <Compile Include="Util\Config.cs" />
     <Compile Include="Util\LinkType.cs" />
     <Compile Include="Util\Mode.cs" />
     <Compile Include="Modules\ModuleActiveStrut.cs" />
     <Compile Include="Util\OSD.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Util\PartExtensions.cs" />
+    <Compile Include="Util\RaycastResult.cs" />
     <Compile Include="Util\RotationAngleHelper.cs" />
     <Compile Include="Util\SettingsEntry.cs" />
+    <Compile Include="Util\Tuple.cs" />
     <Compile Include="Util\Utilities.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="License.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\KSP-CIT-Util\KSP-CIT-Util\KSP-CIT-Util.csproj">
-      <Project>{d4572eb5-9208-4076-9084-25da25f4c9e2}</Project>
-      <Name>KSP-CIT-Util</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

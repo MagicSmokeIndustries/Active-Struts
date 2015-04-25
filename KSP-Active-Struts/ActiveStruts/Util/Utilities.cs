@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using ActiveStruts.Modules;
-using CIT_Util.Types;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -138,7 +137,7 @@ namespace ActiveStruts.Util
             {
                 return new List<ModuleActiveStrut>();
             }
-            var partList = CIT_Util.Utilities.ListEditorParts(true);
+            var partList = ListEditorParts(true);
             return
                 partList.Where(p => p.Modules.Contains(Config.Instance.ModuleName))
                     .Select(p => p.Modules[Config.Instance.ModuleName] as ModuleActiveStrut)
@@ -147,9 +146,49 @@ namespace ActiveStruts.Util
 
         internal static List<ModuleActiveStrut> GetAllActiveStrutsInLoadRange()
         {
-            return CIT_Util.Utilities.GetAllModulesInLoadRange(Config.Instance.ModuleName, p => p as ModuleActiveStrut);
+            return GetAllModulesInLoadRange(Config.Instance.ModuleName, p => p as ModuleActiveStrut);
         }
 
+        public static List<T> GetAllModulesInLoadRange<T>(string moduleName, Func<PartModule, T> convFunc) where T : class
+        {
+            var moduleList = new List<T>();
+            if (!HighLogic.LoadedSceneIsFlight)
+            {
+                if (HighLogic.LoadedSceneIsEditor)
+                {
+                    moduleList = EditorLogic.fetch.ship.Parts.Where(part => part.Modules.Contains(moduleName))
+                                            .Select(part => convFunc(part.Modules[moduleName]))
+                                            .ToList();
+                }
+                return moduleList;
+            }
+            moduleList = FlightGlobals.Vessels.Where(v => v.loaded)
+                                      .Where(v => v.Parts.Any(p => p.Modules.Contains(moduleName)))
+                                      .SelectMany(v => v.Parts)
+                                      .Where(part => part.Modules.Contains(moduleName))
+                                      .Select(part => convFunc(part.Modules[moduleName]))
+                                      .ToList();
+            return moduleList;
+        }
+
+        public static List<Part> GetAllModulesInLoadRange(Func<Part, bool> filterFunc = null)
+        {
+            var cond = filterFunc ?? (p => true);
+            if (HighLogic.LoadedSceneIsFlight)
+            {
+                return FlightGlobals.Vessels.Where(v => v.loaded)
+                                    .Where(v => v.Parts.Any(cond))
+                                    .SelectMany(v => v.Parts)
+                                    .ToList();
+            }
+            if (HighLogic.LoadedSceneIsEditor)
+            {
+                return EditorLogic.fetch.ship.Parts.Where(cond)
+                                  .Select(part => part)
+                                  .ToList();
+            }
+            return new List<Part>();
+        }
         public static List<ModuleActiveStrut> GetAllConnectedTargeters(this ModuleActiveStrut target)
         {
             return
@@ -158,6 +197,28 @@ namespace ActiveStruts.Util
                     .ToList();
         }
 
+        public static bool EditorAboutToAttach(bool movingToo = false)
+        {
+            return HighLogic.LoadedSceneIsEditor &&
+                   EditorLogic.SelectedPart != null &&
+                   EditorLogic.SelectedPart.potentialParent != null;
+        }
+
+        public static List<Part> ListEditorParts(bool includeSelected)
+        {
+            var el = EditorLogic.fetch;
+            var list = el.getSortedShipList();
+            if (!includeSelected || !EditorAboutToAttach())
+            {
+                return list;
+            }
+            EditorLogic.SelectedPart.RecursePartList(list);
+            foreach (var sym in EditorLogic.SelectedPart.symmetryCounterparts)
+            {
+                sym.RecursePartList(list);
+            }
+            return list;
+        }
         public static List<ModuleActiveStrutFreeAttachTarget> GetAllFreeAttachTargets()
         {
             if (HighLogic.LoadedSceneIsFlight)
@@ -175,7 +236,7 @@ namespace ActiveStruts.Util
             {
                 return new List<ModuleActiveStrutFreeAttachTarget>();
             }
-            var partList = CIT_Util.Utilities.ListEditorParts(true);
+            var partList = ListEditorParts(true);
             return
                 partList.Where(p => p.Modules.Contains(Config.Instance.ModuleActiveStrutFreeAttachTarget))
                     .Select(
@@ -187,13 +248,13 @@ namespace ActiveStruts.Util
 
         internal static List<ModuleActiveStrutFreeAttachTarget> GetAllFreeAttachTargetsInLoadRange()
         {
-            return CIT_Util.Utilities.GetAllModulesInLoadRange(Config.Instance.ModuleActiveStrutFreeAttachTarget,
+            return GetAllModulesInLoadRange(Config.Instance.ModuleActiveStrutFreeAttachTarget,
                 p => p as ModuleActiveStrutFreeAttachTarget);
         }
 
         internal static List<ModuleKerbalHook> GetAllKerbalHookModulesInLoadRange()
         {
-            return CIT_Util.Utilities.GetAllModulesInLoadRange(Config.Instance.ModuleKerbalHook,
+            return GetAllModulesInLoadRange(Config.Instance.ModuleKerbalHook,
                 p => p as ModuleKerbalHook);
         }
 
@@ -267,7 +328,14 @@ namespace ActiveStruts.Util
 
         public static Tuple<Vector3, RaycastHit?> GetMouseWorldPosition()
         {
-            return CIT_Util.Utilities.GetMouseWorldPosition(Config.Instance.MaxDistance);
+            return GetMouseWorldPosition(Config.Instance.MaxDistance);
+        }
+
+        public static Tuple<Vector3, RaycastHit?> GetMouseWorldPosition(float rayDistance)
+        {
+            var ray = HighLogic.LoadedSceneIsFlight ? FlightCamera.fetch.mainCamera.ScreenPointToRay(Input.mousePosition) : Camera.main.ScreenPointToRay(Input.mousePosition);
+            RaycastHit hit;
+            return Physics.Raycast(ray, out hit, rayDistance) ? new Tuple<Vector3, RaycastHit?>(hit.point, hit) : new Tuple<Vector3, RaycastHit?>(Vector3.zero, null);
         }
 
         public static Vector3 GetNewWorldPosForFreeAttachTarget(Part freeAttachPart, Vector3 freeAttachTargetLocalVector)
@@ -317,8 +385,75 @@ namespace ActiveStruts.Util
         public static RaycastResult PerformRaycast(Vector3 origin, Vector3 target, Vector3 originUp,
             ICollection<Part> partsToIgnore)
         {
-            return CIT_Util.Utilities.PerformRaycast(origin, target, originUp, Config.Instance.MaxDistance + 1f,
-                partsToIgnore);
+            return PerformRaycast(origin, target, originUp, Config.Instance.MaxDistance + 1f, partsToIgnore);
+        }
+
+        public static RaycastResult PerformRaycast(Vector3 origin, Vector3 target, Vector3 originUp, float rayDistance, Part partToIgnore = null)
+        {
+            var arr = partToIgnore != null ? new[] {partToIgnore} : new Part[0];
+            return PerformRaycast(origin, target, originUp, rayDistance, arr);
+        }
+
+        public static RaycastResult PerformRaycast(Vector3 origin, Vector3 target, Vector3 originUp, float rayDistance, Vessel vesselToIgnore = null)
+        {
+            var arr = vesselToIgnore != null ? vesselToIgnore.Parts.ToArray() : new Part[0];
+            return PerformRaycast(origin, target, originUp, rayDistance, arr);
+        }
+
+        public static RaycastResult PerformRaycast(Vector3 origin, Vector3 target, Vector3 originUp, float rayDistance, ICollection<Part> partsToIgnore)
+        {
+            var dir = (target - origin).normalized;
+            return PerformRaycastIntoDirection(origin, dir, originUp, rayDistance, partsToIgnore);
+        }
+
+        public static Part PartFromHit(this RaycastHit hit)
+        {
+            if (hit.collider == null || hit.collider.gameObject == null)
+            {
+                return null;
+            }
+            var go = hit.collider.gameObject;
+            var p = Part.FromGO(go);
+            while (p == null)
+            {
+                if (go.transform != null && go.transform.parent != null && go.transform.parent.gameObject != null)
+                {
+                    go = go.transform.parent.gameObject;
+                }
+                else
+                {
+                    break;
+                }
+                p = Part.FromGO(go);
+            }
+            return p;
+        }
+
+        public static RaycastResult PerformRaycastIntoDirection(Vector3 origin, Vector3 direction, Vector3 originUp, float rayDistance, ICollection<Part> partsToIgnore)
+        {
+            var ray = new Ray(origin, direction);
+            var hits = Physics.RaycastAll(ray, rayDistance);
+            var validHits = new List<Tuple<RaycastHit, Part>>(hits.Length);
+            validHits.AddRange(from raycastHit in hits
+                               let part = raycastHit.PartFromHit()
+                               where part != null
+                               where !partsToIgnore.Contains(part)
+                               orderby raycastHit.distance ascending
+                               select new Tuple<RaycastHit, Part>(raycastHit, part));
+            var nearestHit = validHits.FirstOrDefault();
+            var rayRes = new RaycastResult {HitResult = false};
+            if (nearestHit == null)
+            {
+                return rayRes;
+            }
+            var hit = nearestHit.Item1;
+            rayRes.HittedPart = nearestHit.Item2;
+            rayRes.DistanceFromOrigin = hit.distance;
+            rayRes.Hit = hit;
+            rayRes.HitResult = true;
+            rayRes.Ray = ray;
+            rayRes.RayAngle = Vector3.Angle(direction, originUp);
+            return rayRes;
         }
 
         public static RaycastResult PerformRaycastFromKerbal(Vector3 origin, Vector3 target, Vector3 originUp,
@@ -330,8 +465,7 @@ namespace ActiveStruts.Util
         public static RaycastResult PerformRaycastIntoDir(Vector3 origin, Vector3 direction, Vector3 originUp,
             Part partToIgnore)
         {
-            return CIT_Util.Utilities.PerformRaycastIntoDirection(origin, direction, originUp,
-                Config.Instance.MaxDistance + 1f, new[] {partToIgnore});
+            return PerformRaycastIntoDirection(origin, direction, originUp, Config.Instance.MaxDistance + 1f, new[] {partToIgnore});
         }
 
         internal static void RemoveAllUntargetedFreeAttachTargetsInLoadRange()
