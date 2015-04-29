@@ -18,7 +18,7 @@ namespace ActiveStruts.Util
         public const float UNFOCUSED_RANGE = 3f;
         private const string MODULE_ACTIVE_STRUT_FREE_ATTACH_TARGET = "ModuleActiveStrutFreeAttachTarget";
         private const string MODULE_KERBAL_HOOK = "ModuleKerbalHook";
-        private const string CONFIG_FILE_PATH = "GameData/CIT/ActiveStruts/Plugins/ActiveStruts.cfg";
+        private const string CONFIG_FILE_PATH = "GameData/MagicSmokeIndustries/ActiveStruts/Plugins/ActiveStruts.cfg";
 
         private const string SETTINGS_NODE_NAME = "ACTIVE_STRUTS_SETTINGS";
         public const int ID_RESET_CHECK_INTERVAL = 120;
@@ -36,9 +36,9 @@ namespace ActiveStruts.Util
             {"FreeAttachStrutExtension", new SettingsEntry(-0.02f)},
             {"StartDelay", new SettingsEntry(60)},
             {"StrutRealignInterval", new SettingsEntry(2)},
-            {"SoundAttachFile", new SettingsEntry("CIT/ActiveStruts/Sounds/AS_Attach")},
-            {"SoundDetachFile", new SettingsEntry("CIT/ActiveStruts/Sounds/AS_Detach")},
-            {"SoundBreakFile", new SettingsEntry("CIT/ActiveStruts/Sounds/AS_Break")},
+            {"SoundAttachFile", new SettingsEntry("MagicSmokeIndustries/ActiveStruts/Sounds/AS_Attach")},
+            {"SoundDetachFile", new SettingsEntry("MagicSmokeIndustries/ActiveStruts/Sounds/AS_Detach")},
+            {"SoundBreakFile", new SettingsEntry("MagicSmokeIndustries/ActiveStruts/Sounds/AS_Break")},
             {"GlobalJointEnforcement", new SettingsEntry(false)},
             {"GlobalJointWeakness", new SettingsEntry(false)},
             {"StrutRealignDistanceTolerance", new SettingsEntry(0.02f)},
