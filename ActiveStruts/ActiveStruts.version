@@ -1,0 +1,16 @@
+﻿{
+     "NAME":"CIT - ActiveStruts",
+	 "URL":"https://static.marce.at/file/KSP/CIT/ActiveStruts/ActiveStruts.version",
+	 "DOWNLOAD":"https://static.marce.at/file/KSP/CIT/ChopIt/ActiveStruts.7z",
+     "VERSION":{
+         "MAJOR":1,
+         "MINOR":0,
+         "PATCH":0,
+         "BUILD":0
+     },
+     "KSP_VERSION":{
+         "MAJOR":0,
+         "MINOR":25,
+         "PATCH":0
+     }
+ }
