@@ -74,13 +74,13 @@ namespace ActiveStruts.Modules
             part.Couple(parent);
 
             part.SendMessage("OnAttach", SendMessageOptions.DontRequireReceiver);
-            Debug.Log("[AS] spawned part attached to its parent.");
+            Debug.Log("[IRAS] spawned part attached to its parent.");
             return true;
         }
 
         internal void Die()
         {
-            Debug.Log("[AS] targetpart tries to die");
+            Debug.Log("[IRAS] targetpart tries to die");
             if (HighLogic.LoadedSceneIsFlight)
             {
                 part.decouple();

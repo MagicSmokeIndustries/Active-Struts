@@ -14,11 +14,11 @@ namespace ActiveStruts.Util
             "Left-Click on a possible target to establish a link. Press 'x' to abort or use the 'Abort Link' button.";
 
         private const string MODULE_NAME = "ModuleActiveStrut";
-        private const string EDITOR_INPUT_LOCK_ID = "[AS] editor lock";
+        private const string EDITOR_INPUT_LOCK_ID = "[IRAS] editor lock";
         public const float UNFOCUSED_RANGE = 3f;
         private const string MODULE_ACTIVE_STRUT_FREE_ATTACH_TARGET = "ModuleActiveStrutFreeAttachTarget";
         private const string MODULE_KERBAL_HOOK = "ModuleKerbalHook";
-        private const string CONFIG_FILE_PATH = "GameData/CIT/ActiveStruts/Plugins/ActiveStruts.cfg";
+        private const string CONFIG_FILE_PATH = "GameData/MagicSmokeIndustries/IRActiveStruts/Plugins/ActiveStruts.cfg";
 
         private const string SETTINGS_NODE_NAME = "ACTIVE_STRUTS_SETTINGS";
         public const int ID_RESET_CHECK_INTERVAL = 120;
@@ -36,9 +36,9 @@ namespace ActiveStruts.Util
             {"FreeAttachStrutExtension", new SettingsEntry(-0.02f)},
             {"StartDelay", new SettingsEntry(60)},
             {"StrutRealignInterval", new SettingsEntry(2)},
-            {"SoundAttachFile", new SettingsEntry("CIT/ActiveStruts/Sounds/AS_Attach")},
-            {"SoundDetachFile", new SettingsEntry("CIT/ActiveStruts/Sounds/AS_Detach")},
-            {"SoundBreakFile", new SettingsEntry("CIT/ActiveStruts/Sounds/AS_Break")},
+            {"SoundAttachFile", new SettingsEntry("MagicSmokeIndustries/IRActiveStruts/Sounds/AS_Attach")},
+            {"SoundDetachFile", new SettingsEntry("MagicSmokeIndustries/IRActiveStruts/Sounds/AS_Detach")},
+            {"SoundBreakFile", new SettingsEntry("MagicSmokeIndustries/IRActiveStruts/Sounds/AS_Break")},
             {"GlobalJointEnforcement", new SettingsEntry(false)},
             {"GlobalJointWeakness", new SettingsEntry(false)},
             {"StrutRealignDistanceTolerance", new SettingsEntry(0.02f)},

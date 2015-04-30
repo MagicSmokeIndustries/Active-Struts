@@ -6,7 +6,7 @@ namespace ActiveStruts
 {
     public static class PartFactory
     {
-        private const string LOG_PREFIX = "[CIT][PartFactory]";
+        private const string LOG_PREFIX = "[IRAS][PartFactory]";
 
         public static Part SpawnPartInEditor(string partName)
         {
@@ -34,7 +34,12 @@ namespace ActiveStruts
             }
             var currentVessel = FlightGlobals.ActiveVessel;
             var avPart = PartLoader.getPartInfoByName(partName);
-            var obj = Object.Instantiate(avPart.partPrefab);
+            if (avPart == null)
+            {
+                Debug.Log(LOG_PREFIX + " failed to find part " + partName);
+                return null;
+            }
+            var obj = UnityEngine.Object.Instantiate(avPart.partPrefab);
             if (obj == null)
             {
                 Debug.Log(LOG_PREFIX + " failed to instantiate part " + partName);
