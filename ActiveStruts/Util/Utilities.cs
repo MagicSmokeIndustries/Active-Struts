@@ -260,10 +260,10 @@ namespace ActiveStruts.Util
 
         public static List<ModuleActiveStrut> GetAllPossibleTargets(this ModuleActiveStrut origin)
         {
-            Debug.Log("[AS] there are " + GetAllActiveStruts().Count + " active struts");
+            Debug.Log("[IRAS] there are " + GetAllActiveStruts().Count + " active struts");
             foreach (var moduleActiveStrut in GetAllActiveStruts())
             {
-                Debug.Log("[AS] module with ID " + moduleActiveStrut.ID + " is a possible target: " +
+                Debug.Log("[IRAS] module with ID " + moduleActiveStrut.ID + " is a possible target: " +
                           origin.IsPossibleTarget(moduleActiveStrut));
             }
             return
@@ -471,7 +471,7 @@ namespace ActiveStruts.Util
         internal static void RemoveAllUntargetedFreeAttachTargetsInLoadRange()
         {
             var list = GetAllUntargetedFreeAttachTargetsInLoadRange();
-            Debug.Log("[AS] removing " + list.Count + " unused target parts");
+            Debug.Log("[IRAS] removing " + list.Count + " unused target parts");
             foreach (var moduleActiveStrutFreeAttachTarget in list)
             {
                 moduleActiveStrutFreeAttachTarget.Die();

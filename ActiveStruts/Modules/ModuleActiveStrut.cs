@@ -541,7 +541,7 @@ namespace ActiveStruts.Modules
             {
                 InputLockManager.SetControlLock(EDITOR_LOCK_MASK, Config.Instance.EditorInputLockId);
                 var newPart = PartFactory.SpawnPartInEditor("ASTargetCube");
-                Debug.Log("[AS] spawned part in editor");
+                Debug.Log("[IRAS] spawned part in editor");
                 ActiveStrutsAddon.CurrentTargeter = this;
                 ActiveStrutsAddon.Mode = AddonMode.FreeAttach;
                 ActiveStrutsAddon.NewSpawnedPart = newPart;
@@ -695,7 +695,7 @@ namespace ActiveStruts.Modules
                 !GameDatabase.Instance.ExistsAudioClip(Config.Instance.SoundDetachFileUrl) ||
                 !GameDatabase.Instance.ExistsAudioClip(Config.Instance.SoundBreakFileUrl))
             {
-                Debug.Log("[AS] sounds cannot be loaded." +
+                Debug.Log("[IRAS] sounds cannot be loaded." +
                           (SoundAttach == null ? "FXGroup not instantiated" : "sound file not found"));
                 soundFlag = false;
             }
@@ -722,7 +722,7 @@ namespace ActiveStruts.Modules
                 {
                     FreeAttachTarget = target;
                     target.Targeter = this;
-                    Debug.Log("[AS] connected to targetpart with ID: " + FreeAttachTarget.ID);
+                    Debug.Log("[IRAS] connected to targetpart with ID: " + FreeAttachTarget.ID);
                     if (HighLogic.LoadedSceneIsFlight && target.vessel != null)
                     {
                         IsOwnVesselConnected = target.vessel == vessel;
@@ -781,7 +781,7 @@ namespace ActiveStruts.Modules
             var ani = DeployAnimation;
             if (ani == null)
             {
-                Debug.Log("[AS] animation is null!");
+                Debug.Log("[IRAS] animation is null!");
                 return;
             }
             if (IsAnimationPlaying)
@@ -815,7 +815,7 @@ namespace ActiveStruts.Modules
             OSD.PostMessageLowerRightCorner("waiting for Unity to catch up...", 1.5f);
             while (!newPart.rigidbody && currWaits < MAX_WAITS && newPart.vessel != null)
             {
-                Debug.Log("[AS] rigidbody not ready - waiting");
+                Debug.Log("[IRAS] rigidbody not ready - waiting");
                 currWaits++;
                 try
                 {
@@ -851,7 +851,7 @@ namespace ActiveStruts.Modules
                 {
                     var nextTryCount = ++tryCount;
                     Debug.Log(
-                        string.Format("[AS] part spawning failed => retry (vessel is null = {0} | waits = {1}/{2})",
+                        string.Format("[IRAS] part spawning failed => retry (vessel is null = {0} | waits = {1}/{2})",
                             (newPart.vessel == null), currWaits, MAX_WAITS));
                     StartCoroutine(PreparePartForFreeAttach(straightOut, nextTryCount));
                 }
@@ -859,7 +859,7 @@ namespace ActiveStruts.Modules
                 {
                     Debug.Log(
                         string.Format(
-                            "[AS] part spawning failed more than {3} times => aborting FreeAttach (vessel is null = {0} | waits = {1}/{2})",
+                            "[IRAS] part spawning failed more than {3} times => aborting FreeAttach (vessel is null = {0} | waits = {1}/{2})",
                             (newPart.vessel == null), currWaits, MAX_WAITS, MAX_TRIES));
                     OSD.PostMessage("FreeAttach failed because target part can not be prepared!");
                     try
@@ -868,7 +868,7 @@ namespace ActiveStruts.Modules
                     }
                     catch (NullReferenceException e)
                     {
-                        Debug.Log("[AS] tried to abort link because part spawning failed, but abort throw exception: " +
+                        Debug.Log("[IRAS] tried to abort link because part spawning failed, but abort throw exception: " +
                                   e.Message);
                     }
                 }
@@ -880,7 +880,7 @@ namespace ActiveStruts.Modules
                 catch (Exception e)
                 {
                     Debug.Log(
-                        "[AS] tried to destroy a part which failed to spawn properly in time, but operation throw exception: " +
+                        "[IRAS] tried to destroy a part which failed to spawn properly in time, but operation throw exception: " +
                         e.Message);
                 }
                 yield break;
@@ -1772,7 +1772,7 @@ namespace ActiveStruts.Modules
                 return;
             }
             OSD.PostMessage("Straight Out Attach failed!");
-            Debug.Log("[AS] straight out raycast didn't hit anything after part creation");
+            Debug.Log("[IRAS] straight out raycast didn't hit anything after part creation");
             DestroyImmediate(newPart);
         }
 
@@ -1968,7 +1968,7 @@ namespace ActiveStruts.Modules
             catch (Exception e)
             {
                 jointAttachNode = null;
-                Debug.Log("[AS] failed to create attachjoint: " + e.Message + " " + e.StackTrace);
+                Debug.Log("[IRAS] failed to create attachjoint: " + e.Message + " " + e.StackTrace);
             }
         }
 

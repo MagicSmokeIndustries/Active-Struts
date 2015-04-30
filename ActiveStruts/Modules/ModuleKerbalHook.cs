@@ -128,7 +128,7 @@ namespace ActiveStruts.Modules
             OSD.PostMessageLowerRightCorner("waiting for Unity to catch up...", 1.5f);
             while (!newPart.rigidbody)
             {
-                Debug.Log("[AS] rigidbody not ready - waiting");
+                Debug.Log("[IRAS] rigidbody not ready - waiting");
                 try
                 {
                     DestroyImmediate(newPart.collider);

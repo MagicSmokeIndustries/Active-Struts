@@ -133,7 +133,7 @@ namespace ActiveStruts.Addons
                     }
                     catch (NullReferenceException)
                     {
-                        Debug.Log("[AS] exception thrown while adding module to EVA");
+                        Debug.Log("[IRAS] exception thrown while adding module to EVA");
                     }
                 }
             }
@@ -195,12 +195,12 @@ namespace ActiveStruts.Addons
                 ModuleKerbalHook module;
                 if (rp.TryGetModule(out module))
                 {
-                    Debug.Log("[AS] module found in part!");
+                    Debug.Log("[IRAS] module found in part!");
                     run = false;
                 }
                 else
                 {
-                    Debug.Log("[AS] module not found - waiting");
+                    Debug.Log("[IRAS] module not found - waiting");
                     yield return new WaitForFixedUpdate();
                 }
             }
@@ -308,7 +308,7 @@ namespace ActiveStruts.Addons
                 .Where(p => p.Modules.Contains(Config.Instance.ModuleKerbalHook))
                 .Select(p => p.Modules[Config.Instance.ModuleKerbalHook] as ModuleKerbalHook)
                 .FirstOrDefault();
-            //Debug.Log("[AS] on eva end module has been found!");
+            //Debug.Log("[IRAS] on eva end module has been found!");
             if (module != null)
             {
                 var modulePart = module.part;
@@ -353,7 +353,7 @@ namespace ActiveStruts.Addons
 
         public void HandleFlightPartUndock(Part data)
         {
-            Debug.Log("[AS] part undocked");
+            Debug.Log("[IRAS] part undocked");
         }
 
         private IEnumerator HighlightMouseOverPart(Part mouseOverPart)
@@ -472,7 +472,7 @@ namespace ActiveStruts.Addons
             var targetModuleName = Config.Instance.ModuleActiveStrutFreeAttachTarget;
             if (!NewSpawnedPart.Modules.Contains(targetModuleName))
             {
-                Debug.Log("[AS][ERR] spawned part contains no target module. Panic!!");
+                Debug.Log("[IRAS][ERR] spawned part contains no target module. Panic!!");
                 NewSpawnedPart.decouple();
                 Destroy(NewSpawnedPart);
             }
@@ -665,7 +665,7 @@ namespace ActiveStruts.Addons
                 }
                 catch (Exception e)
                 {
-                    Debug.Log("[AS] unused target part cleanup threw exception: " + e.Message);
+                    Debug.Log("[IRAS] unused target part cleanup threw exception: " + e.Message);
                 }
             }
             if (!HighLogic.LoadedSceneIsFlight)
@@ -688,16 +688,16 @@ namespace ActiveStruts.Addons
             ModuleKerbalHook rPMod = null;
             if (rP != null && !rP.TryGetModule(out rPMod))
             {
-                Debug.Log("[AS] trying to add module to EVA root part");
+                Debug.Log("[IRAS] trying to add module to EVA root part");
                 try
                 {
                     rP.AddModule("ModuleKerbalHook");
-                    Debug.Log("[AS] module added to EVA root part");
+                    Debug.Log("[IRAS] module added to EVA root part");
                     StartCoroutine(CatchModuleAddedToEVA(rP));
                 }
                 catch (NullReferenceException e)
                 {
-                    Debug.Log("[AS] exception thrown: " + e.Message);
+                    Debug.Log("[IRAS] exception thrown: " + e.Message);
                 }
             }
             else if (rP != null)
@@ -722,7 +722,7 @@ namespace ActiveStruts.Addons
                 {
                     CurrentKerbalTargeter.Abort();
                 }
-                Debug.Log("[AS][ERR] no target part ready - aborting FreeAttach");
+                Debug.Log("[IRAS][ERR] no target part ready - aborting FreeAttach");
                 return;
             }
             if (partPlacementInProgress)
@@ -753,7 +753,7 @@ namespace ActiveStruts.Addons
             }
             if (updateFlag)
             {
-                Debug.Log("[AS] IDs have been updated.");
+                Debug.Log("[IRAS] IDs have been updated.");
             }
             if (idResetTrimFlag)
             {
@@ -954,7 +954,7 @@ namespace ActiveStruts.Addons
             }
             catch (NullReferenceException e)
             {
-                Debug.Log("[AS] addon update exception catched: " + e);
+                Debug.Log("[IRAS] addon update exception catched: " + e);
                 /*
                  * For no apparent reason an exception is thrown on first load.
                  * I found no way to circumvent this.
