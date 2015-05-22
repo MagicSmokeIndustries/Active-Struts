@@ -98,20 +98,34 @@ namespace ActiveStruts.Addons
             }
             if (module.IsConnectionOrigin && module.Target != null)
             {
-                module.Target.part.SetHighlightColor(Color.cyan);
-                module.Target.part.SetHighlight(true, false);
-                targetHighlightedParts.Add(new HighlightedPart(module.Target.part, module.ID));
+                if (targetHighlightedParts.Count(s => s.Part == module.Target.part) == 0)
+                {
+                    module.Target.part.SetHighlightColor(Color.cyan);
+                    module.Target.part.SetHighlight(true, false);
+                    targetHighlightedParts.Add(new HighlightedPart(module.Target.part, module.ID));
+                }
             }
             else if (module.Targeter != null && !module.IsConnectionOrigin)
             {
-                module.Targeter.part.SetHighlightColor(Color.cyan);
-                module.Targeter.part.SetHighlight(true, false);
-                targetHighlightedParts.Add(new HighlightedPart(module.Targeter.part, module.ID));
+                if (targetHighlightedParts.Count (s => s.Part == module.Targeter.part) == 0) 
+                {
+                    module.Targeter.part.SetHighlightColor (Color.cyan);
+                    module.Targeter.part.SetHighlight (true, false);
+                    targetHighlightedParts.Add (new HighlightedPart (module.Targeter.part, module.ID));
+                }
             }
             if (Config.Instance.ShowStraightOutHint && !module.IsFlexible && !module.IsTargetOnly)
             {
-                straightOutHintActiveParts.Add(new StraightOutHintActivePart(data, module.ID,
-                    CreateStraightOutHintForPart(module), module));
+                //only add the hint if there is none as this method is called multiple times now.
+                if (straightOutHintActiveParts.Count(s => s.Part == data) == 0)
+                    straightOutHintActiveParts.Add(new StraightOutHintActivePart(data, module.ID,
+                        CreateStraightOutHintForPart(module), module));
+                else
+                {
+                    //refresh the timer on the part
+                    var currentHint = straightOutHintActiveParts.Find (s => s.Part == data);
+                    currentHint.HighlightStartTime = DateTime.Now;
+                }
             }
         }
 
@@ -166,6 +180,7 @@ namespace ActiveStruts.Addons
                 color = Color.green.MakeColorTransparent(Config.Instance.ColorTransparency)
             };
             connector.SetActive(false);
+
             GameEvents.onPartActionUICreate.Add(ActionMenuCreated);
             GameEvents.onPartActionUIDismiss.Add(ActionMenuClosed);
             GameEvents.onCrewBoardVessel.Add(HandleEvaEnd);
@@ -220,6 +235,7 @@ namespace ActiveStruts.Addons
             {
                 color = Color.blue.MakeColorTransparent(Config.Instance.ColorTransparency)
             };
+            //Debug.Log ("[IRAS] creating hint, color transparency:" + Config.Instance.ColorTransparency);
             UpdateStraightOutHint(module, go);
             return go;
         }

@@ -1,6 +1,12 @@
 ﻿<Properties StartupItem="ActiveStruts/ActiveStruts.csproj">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench />
+  <MonoDevelop.Ide.Workbench ActiveDocument="ActiveStruts/Util/Config.cs">
+    <Files>
+      <File FileName="ActiveStruts/Addons/ActiveStrutsAddon.cs" Line="902" Column="41" />
+      <File FileName="ActiveStruts/Modules/ModuleActiveStrut.cs" Line="1527" Column="47" />
+      <File FileName="ActiveStruts/Util/Config.cs" Line="26" Column="88" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore />
   </MonoDevelop.Ide.DebuggingService.Breakpoints>

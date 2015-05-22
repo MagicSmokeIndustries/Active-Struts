@@ -583,8 +583,8 @@ namespace ActiveStruts.Modules
                     straightOutAttached = false;
                     if (HighLogic.LoadedSceneIsFlight)
                     {
-                        //this.StartCoroutine(this.PreparePartForFreeAttach(true));
-                        PlaceFreeAttach(hittedPart);
+                        StartCoroutine(PreparePartForFreeAttach(true));
+                        //PlaceFreeAttach(hittedPart);
                         straightOutAttached = true;
                     }
                 }
@@ -715,23 +715,28 @@ namespace ActiveStruts.Modules
             {
                 oldTargetPosition = Vector3.zero;
                 ActiveStrutsAddon.Mode = AddonMode.None;
-                var target =
-                    targetPart.Modules[Config.Instance.ModuleActiveStrutFreeAttachTarget] as
-                        ModuleActiveStrutFreeAttachTarget;
-                if (target != null)
+
+                if (targetPart.Modules.Contains(Config.Instance.ModuleActiveStrutFreeAttachTarget))
                 {
-                    FreeAttachTarget = target;
-                    target.Targeter = this;
-                    Debug.Log("[IRAS] connected to targetpart with ID: " + FreeAttachTarget.ID);
-                    if (HighLogic.LoadedSceneIsFlight && target.vessel != null)
+                    var target =
+                        targetPart.Modules[Config.Instance.ModuleActiveStrutFreeAttachTarget] as
+                        ModuleActiveStrutFreeAttachTarget;
+                    if (target != null)
                     {
-                        IsOwnVesselConnected = target.vessel == vessel;
-                    }
-                    else if (HighLogic.LoadedSceneIsEditor)
-                    {
-                        IsOwnVesselConnected = true;
+                        FreeAttachTarget = target;
+                        target.Targeter = this;
+                        Debug.Log("[IRAS] connected to targetpart with ID: " + FreeAttachTarget.ID);
+                        if (HighLogic.LoadedSceneIsFlight && target.vessel != null)
+                        {
+                            IsOwnVesselConnected = target.vessel == vessel;
+                        }
+                        else if (HighLogic.LoadedSceneIsEditor)
+                        {
+                            IsOwnVesselConnected = true;
+                        }
                     }
                 }
+
                 freeAttachPart = targetPart;
                 Mode = Mode.Linked;
                 IsLinked = true;
@@ -1237,10 +1242,22 @@ namespace ActiveStruts.Modules
         public void ShowGrappler(bool show, Vector3 targetPos, Vector3 lookAtPoint, bool applyOffset,
             Vector3 targetNormalVector, bool useNormalVector = false, bool inverseOffset = false)
         {
-            if (!ModelFeatures[ModelFeaturesType.Grappler])
+            if (Grappler == null || ModelFeatures == null)
             {
                 return;
             }
+
+            if (!show)
+            {
+                Grappler.localScale = Vector3.zero;
+                return;
+            }
+
+            if (!ModelFeatures[ModelFeaturesType.Grappler] )
+            {
+                return;
+            }
+
             if (show && !IsTargetOnly)
             {
                 Grappler.localScale = new Vector3(1, 1, 1);
@@ -1258,18 +1275,27 @@ namespace ActiveStruts.Modules
                     Grappler.Translate(new Vector3(offset, 0, 0));
                 }
             }
-            if (!show)
-            {
-                Grappler.localScale = Vector3.zero;
-            }
+
         }
 
         public void ShowHooks(bool show, Vector3 targetPos, Vector3 targetNormalVector, bool useNormalVector = false)
         {
+            if (Hooks == null || ModelFeatures == null)
+            {
+                return;
+            }
+
+            if (!show)
+            {
+                Hooks.localScale = Vector3.zero;
+                return;
+            }
+
             if (!ModelFeatures[ModelFeaturesType.Hooks])
             {
                 return;
             }
+
             if (show && !IsTargetOnly)
             {
                 Hooks.localScale = new Vector3(1, 1, 1)*HooksScaleFactor;
@@ -1282,10 +1308,7 @@ namespace ActiveStruts.Modules
                             targetNormalVector)*Hooks.rotation;
                 }
             }
-            if (!show)
-            {
-                Hooks.localScale = Vector3.zero;
-            }
+
         }
 
         [KSPEvent(name = "ToggleEnforcement", active = false, guiName = "Toggle Enforcement", guiActiveEditor = false)]
@@ -2103,6 +2126,9 @@ namespace ActiveStruts.Modules
 
         private void TransformLights(bool show, Vector3 lookAtTarget, bool bright = false)
         {
+            if (LightsDull == null || LightsBright == null || ModelFeatures == null)
+                return;
+            
             if (!(ModelFeatures[ModelFeaturesType.LightsBright] && ModelFeatures[ModelFeaturesType.LightsDull]))
             {
                 return;
