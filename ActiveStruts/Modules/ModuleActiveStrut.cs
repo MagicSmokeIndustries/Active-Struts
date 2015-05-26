@@ -583,8 +583,8 @@ namespace ActiveStruts.Modules
                     straightOutAttached = false;
                     if (HighLogic.LoadedSceneIsFlight)
                     {
-                        StartCoroutine(PreparePartForFreeAttach(true));
-                        //PlaceFreeAttach(hittedPart);
+                        //StartCoroutine(PreparePartForFreeAttach(true));
+                        PlaceFreeAttach(hittedPart, true);
                         straightOutAttached = true;
                     }
                 }
@@ -709,7 +709,7 @@ namespace ActiveStruts.Modules
             initialized = true;
         }
 
-        public void PlaceFreeAttach(Part targetPart)
+        public void PlaceFreeAttach(Part targetPart, bool isStraightOut = false)
         {
             lock (freeAttachStrutUpdateLock)
             {
@@ -747,7 +747,7 @@ namespace ActiveStruts.Modules
                 IsEnforced = Config.Instance.GlobalJointEnforcement;
                 if (HighLogic.LoadedSceneIsFlight)
                 {
-                    CreateJoint(part.Rigidbody, IsFreeAttached ? targetPart.parent.Rigidbody : targetPart.Rigidbody,
+                    CreateJoint(part.Rigidbody, (IsFreeAttached && !isStraightOut) ? targetPart.parent.Rigidbody : targetPart.Rigidbody,
                         LinkType.Weak, targetPart.transform.position);
                 }
                 Target = null;
@@ -813,7 +813,7 @@ namespace ActiveStruts.Modules
         private IEnumerator PreparePartForFreeAttach(bool straightOut = false, int tryCount = 0)
         {
             const int MAX_WAITS = 30;
-            const int MAX_TRIES = 5;
+            const int MAX_TRIES = 1;
             var currWaits = 0;
             var newPart = PartFactory.SpawnPartInFlight("ASTargetCube", part, new Vector3(2, 2, 2),
                 part.transform.rotation);
