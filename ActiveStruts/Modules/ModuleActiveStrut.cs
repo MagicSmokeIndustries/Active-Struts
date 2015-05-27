@@ -813,7 +813,7 @@ namespace ActiveStruts.Modules
         private IEnumerator PreparePartForFreeAttach(bool straightOut = false, int tryCount = 0)
         {
             const int MAX_WAITS = 30;
-            const int MAX_TRIES = 1;
+            const int MAX_TRIES = 5;
             var currWaits = 0;
             var newPart = PartFactory.SpawnPartInFlight("ASTargetCube", part, new Vector3(2, 2, 2),
                 part.transform.rotation);
