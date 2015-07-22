@@ -9,9 +9,21 @@ using Utilities = ActiveStruts.Util.Utilities;
 
 namespace ActiveStruts.Addons
 {
-    [KSPAddon(KSPAddon.Startup.EveryScene, false)]
+    [KSPAddon(KSPAddon.Startup.Flight, false)]
+    public class ActiveStrutsFlight : ActiveStrutsAddon
+    {
+        public override string AddonName { get { return this.name; } }
+    }
+
+    [KSPAddon(KSPAddon.Startup.EditorAny, false)]
+    public class ActiveStrutsEditor : ActiveStrutsAddon
+    {
+        public override string AddonName { get { return this.name; } }
+    }
+
     public class ActiveStrutsAddon : MonoBehaviour
     {
+        public virtual String AddonName { get; set; }
         private const float MP_TO_RAY_HIT_DISTANCE_TOLERANCE = 0.02f;
         private const int UNUSED_TARGET_PART_REMOVAL_COUNTER_INTERVAL = 18000;
         private static GameObject connector;
