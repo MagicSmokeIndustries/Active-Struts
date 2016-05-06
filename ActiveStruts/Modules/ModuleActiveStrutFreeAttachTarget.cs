@@ -43,7 +43,7 @@ namespace ActiveStruts.Modules
 
         public Rigidbody PartRigidbody
         {
-            get { return part.rigidbody; }
+            get { return part.GetComponent<Rigidbody>(); }
         }
 
         public ModuleActiveStrut Targeter { get; set; }

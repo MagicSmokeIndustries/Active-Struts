@@ -126,7 +126,7 @@ namespace ActiveStruts.Modules
             var newPart = PartFactory.SpawnPartInFlight("TetherHook", part, new Vector3(2, 2, 2),
                 part.transform.rotation);
             OSD.PostMessageLowerRightCorner("waiting for Unity to catch up...", 1.5f);
-            while (!newPart.rigidbody)
+            while (!newPart.GetComponent<Rigidbody>())
             {
                 Debug.Log("[IRAS] rigidbody not ready - waiting");
                 try
@@ -208,7 +208,7 @@ namespace ActiveStruts.Modules
             joint.spring = conf.KerbalTetherSpringForce;
             joint.damper = conf.KerbalTetherDamper;
             joint.anchor = Target.part.transform.position;
-            joint.connectedBody = Target.part.parent.rigidbody;
+            joint.connectedBody = Target.part.parent.GetComponent<Rigidbody>();
             joint.maxDistance = MaxDistance + 0.25f;
             joint.breakForce = Mathf.Infinity;
             joint.breakTorque = Mathf.Infinity;
@@ -216,7 +216,7 @@ namespace ActiveStruts.Modules
             yield return new WaitForFixedUpdate();
             localAnchor.transform.position = part.transform.position;
             localAnchorJoint = localAnchor.AddComponent<FixedJoint>();
-            localAnchorJoint.connectedBody = part.rigidbody;
+            localAnchorJoint.connectedBody = part.GetComponent<Rigidbody>();
             localAnchorJoint.breakForce = localAnchorJoint.breakTorque = Mathf.Infinity;
         }
 
@@ -234,7 +234,7 @@ namespace ActiveStruts.Modules
             joint.spring = conf.KerbalTetherSpringForce;
             joint.damper = conf.KerbalTetherDamper;
             joint.anchor = tPos;
-            joint.connectedBody = hookAnchor.part.rigidbody;
+            joint.connectedBody = hookAnchor.part.GetComponent<Rigidbody>();
             joint.maxDistance = MaxDistance + 0.25f;
             joint.breakForce = Mathf.Infinity;
             joint.breakTorque = Mathf.Infinity;

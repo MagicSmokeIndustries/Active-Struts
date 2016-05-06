@@ -1,10 +1,14 @@
 ﻿<Properties StartupItem="ActiveStruts/ActiveStruts.csproj">
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="ActiveStruts/Util/Config.cs">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Unity.Instance.Unity Editor" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="ActiveStruts/Util/Utilities.cs">
     <Files>
-      <File FileName="ActiveStruts/Addons/ActiveStrutsAddon.cs" Line="902" Column="41" />
-      <File FileName="ActiveStruts/Modules/ModuleActiveStrut.cs" Line="1527" Column="47" />
+      <File FileName="ActiveStruts/Addons/ActiveStrutsAddon.cs" Line="486" Column="28" />
+      <File FileName="ActiveStruts/Modules/ModuleActiveStrut.cs" Line="2224" Column="40" />
       <File FileName="ActiveStruts/Util/Config.cs" Line="26" Column="88" />
+      <File FileName="ActiveStruts/Modules/ModuleActiveStrutFreeAttachTarget.cs" Line="47" Column="10" />
+      <File FileName="ActiveStruts/Modules/ModuleAutoStrutter.cs" Line="287" Column="14" />
+      <File FileName="ActiveStruts/Modules/ModuleKerbalHook.cs" Line="231" Column="59" />
+      <File FileName="ActiveStruts/Util/Utilities.cs" Line="79" Column="10" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>

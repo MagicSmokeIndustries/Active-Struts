@@ -53,7 +53,7 @@ namespace ActiveStruts.Util
         {
             var sling = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             sling.name = name;
-            Object.DestroyImmediate(sling.collider);
+            Object.DestroyImmediate(sling.GetComponent<Collider>());
             const float HEIGHT = 0.0125f;
             const float DIAMETER = HEIGHT*6.5f;
             sling.transform.localScale = new Vector3(DIAMETER, DIAMETER, DIAMETER);
@@ -68,7 +68,7 @@ namespace ActiveStruts.Util
         {
             var strut = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             strut.name = name;
-            Object.DestroyImmediate(strut.collider);
+            Object.DestroyImmediate(strut.GetComponent<Collider>());
             var connDim = Config.Instance.ConnectorDimension*0.5f;
             strut.transform.localScale = new Vector3(connDim, connDim, connDim);
             var mr = strut.GetComponent<MeshRenderer>();
@@ -81,18 +81,18 @@ namespace ActiveStruts.Util
         internal static GameObject CreateLocalAnchor(string name, bool active)
         {
             var localAnchor = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            if (localAnchor.rigidbody == null)
+            if (localAnchor.GetComponent<Rigidbody>() == null)
             {
                 localAnchor.AddComponent<Rigidbody>();
             }
             localAnchor.name = name;
-            Object.DestroyImmediate(localAnchor.collider);
+            Object.DestroyImmediate(localAnchor.GetComponent<Collider>());
             const float LOCAL_ANCHOR_DIM = 0.000001f;
             localAnchor.transform.localScale = new Vector3(LOCAL_ANCHOR_DIM, LOCAL_ANCHOR_DIM, LOCAL_ANCHOR_DIM);
             var mr = localAnchor.GetComponent<MeshRenderer>();
             mr.name = name;
             mr.material = new Material(Shader.Find("Diffuse")) {color = Color.magenta};
-            localAnchor.rigidbody.mass = 0.00001f;
+            localAnchor.GetComponent<Rigidbody>().mass = 0.00001f;
             localAnchor.SetActive(active);
             return localAnchor;
         }
@@ -101,7 +101,7 @@ namespace ActiveStruts.Util
         {
             var strut = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             strut.name = name;
-            Object.DestroyImmediate(strut.collider);
+            Object.DestroyImmediate(strut.GetComponent<Collider>());
             const float CONN_DIM = 1f;
             strut.transform.localScale = new Vector3(CONN_DIM, CONN_DIM, CONN_DIM);
             var mr = strut.GetComponent<MeshRenderer>();

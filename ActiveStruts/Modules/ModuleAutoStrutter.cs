@@ -202,13 +202,13 @@ namespace ActiveStruts.Modules
 
         private void CreateJoint()
         {
-            if (partner == null || partner.rigidbody == null)
+            if (partner == null || partner.GetComponent<Rigidbody>() == null)
             {
                 return;
             }
             joint = part.gameObject.AddComponent<FixedJoint>();
             joint.breakForce = joint.breakTorque = Mathf.Infinity;
-            joint.connectedBody = partner.rigidbody;
+            joint.connectedBody = partner.GetComponent<Rigidbody>();
         }
 
         private ModuleAutoStrutter FindNearestAutoStrutterOnVessel()
@@ -289,10 +289,14 @@ namespace ActiveStruts.Modules
             }
             foreach (var l in lights)
             {
-                l.renderer.material.color = col;
-                l.renderer.material.SetColor("_Emissive", col);
-                l.renderer.material.SetColor("_MainTex", col);
-                l.renderer.material.SetColor("_EmissiveColor", col);
+                var r = l.GetComponent<Renderer> ();
+                if (!r)
+                    continue;
+                
+                r.material.color = col;
+                r.material.SetColor("_Emissive", col);
+                r.material.SetColor("_MainTex", col);
+                r.material.SetColor("_EmissiveColor", col);
             }
         }
     }

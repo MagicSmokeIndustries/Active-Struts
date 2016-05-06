@@ -182,7 +182,7 @@ namespace ActiveStruts.Addons
             }
             connector = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             connector.name = "ASConn";
-            DestroyImmediate(connector.collider);
+            DestroyImmediate(connector.GetComponent<Collider>());
             var connDim = Config.Instance.ConnectorDimension;
             connector.transform.localScale = new Vector3(connDim, connDim, connDim);
             var mr = connector.GetComponent<MeshRenderer>();
@@ -238,7 +238,7 @@ namespace ActiveStruts.Addons
             var go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             go.SetActive(false);
             go.name = Guid.NewGuid().ToString();
-            DestroyImmediate(go.collider);
+            DestroyImmediate(go.GetComponent<Collider>());
             var connDim = Config.Instance.ConnectorDimension;
             go.transform.localScale = new Vector3(connDim, connDim, connDim);
             var mr = go.GetComponent<MeshRenderer>();
@@ -483,8 +483,9 @@ namespace ActiveStruts.Addons
         {
             var activeVessel = FlightGlobals.ActiveVessel;
             NewSpawnedPart.transform.position = raycast.Hit.point;
-            NewSpawnedPart.rigidbody.velocity = raycast.HittedPart.rigidbody.velocity;
-            NewSpawnedPart.rigidbody.angularVelocity = raycast.HittedPart.rigidbody.angularVelocity;
+            NewSpawnedPart.GetComponent<Rigidbody>().velocity = raycast.HittedPart.GetComponent<Rigidbody>().velocity;
+            NewSpawnedPart.GetComponent<Rigidbody>().angularVelocity = raycast.HittedPart.GetComponent<Rigidbody>().angularVelocity;
+
             yield return new WaitForSeconds(0.1f);
             NewSpawnedPart.transform.rotation = raycast.HittedPart.transform.rotation;
             NewSpawnedPart.transform.position = raycast.Hit.point;

@@ -818,7 +818,7 @@ namespace ActiveStruts.Modules
             var newPart = PartFactory.SpawnPartInFlight("ASTargetCube", part, new Vector3(2, 2, 2),
                 part.transform.rotation);
             OSD.PostMessageLowerRightCorner("waiting for Unity to catch up...", 1.5f);
-            while (!newPart.rigidbody && currWaits < MAX_WAITS && newPart.vessel != null)
+            while (!newPart.GetComponent<Rigidbody>() && currWaits < MAX_WAITS && newPart.vessel != null)
             {
                 Debug.Log("[IRAS] rigidbody not ready - waiting");
                 currWaits++;
@@ -850,7 +850,7 @@ namespace ActiveStruts.Modules
                 }
                 yield return new WaitForFixedUpdate();
             }
-            if (newPart.vessel == null || (MAX_WAITS == currWaits && newPart.rigidbody == null))
+            if (newPart.vessel == null || (MAX_WAITS == currWaits && newPart.GetComponent<Rigidbody>() == null))
             {
                 if (tryCount < MAX_TRIES)
                 {
@@ -1100,7 +1100,7 @@ namespace ActiveStruts.Modules
                     }
                     var type = IsFlexible ? LinkType.Flexible : Target.IsTargetOnly ? LinkType.Normal : LinkType.Maximum;
                     IsEnforced = Config.Instance.GlobalJointEnforcement || type == LinkType.Maximum;
-                    CreateJoint(part.rigidbody, Target.part.parent.rigidbody, type, Target.transform.position);
+                    CreateJoint(part.GetComponent<Rigidbody>(), Target.part.parent.GetComponent<Rigidbody>(), type, Target.transform.position);
                     Mode = Mode.Linked;
                     Target.Mode = Mode.Linked;
                     IsLinked = true;
@@ -1209,7 +1209,7 @@ namespace ActiveStruts.Modules
             IsConnectionOrigin = true;
             var type = IsFlexible ? LinkType.Flexible : target.IsTargetOnly ? LinkType.Normal : LinkType.Maximum;
             IsEnforced = !IsFlexible && (Config.Instance.GlobalJointEnforcement || type == LinkType.Maximum);
-            CreateJoint(part.rigidbody, target.part.parent.rigidbody, type, Target.transform.position);
+            CreateJoint(part.GetComponent<Rigidbody>(), target.part.parent.GetComponent<Rigidbody>(), type, Target.transform.position);
             CreateStrut(
                 target.ModelFeatures[ModelFeaturesType.HeadExtension]
                     ? target.StrutOrigin.position
@@ -1322,7 +1322,7 @@ namespace ActiveStruts.Modules
             DestroyJoint();
             if (!IsFreeAttached)
             {
-                CreateJoint(part.rigidbody, Target.part.parent.rigidbody, LinkType, Target.transform.position);
+                CreateJoint(part.GetComponent<Rigidbody>(), Target.part.parent.GetComponent<Rigidbody>(), LinkType, Target.transform.position);
             }
             else
             {
@@ -1335,7 +1335,7 @@ namespace ActiveStruts.Modules
                             ModuleActiveStrutFreeAttachTarget;
                     if (moduleActiveStrutFreeAttachTarget != null)
                     {
-                        CreateJoint(part.rigidbody, moduleActiveStrutFreeAttachTarget.PartRigidbody, LinkType.Weak,
+                        CreateJoint(part.GetComponent<Rigidbody>(), moduleActiveStrutFreeAttachTarget.PartRigidbody, LinkType.Weak,
                             (rayRes.Hit.point + Origin.position)/2);
                     }
                 }
@@ -1771,7 +1771,7 @@ namespace ActiveStruts.Modules
             flexJoint.spring = FlexibleStrutSpring;
             flexJoint.damper = FlexibleStrutDamper;
             flexJoint.anchor = localFlexAnchor.transform.position;
-            flexJoint.connectedBody = Target.part.parent.rigidbody;
+            flexJoint.connectedBody = Target.part.parent.GetComponent<Rigidbody>();
             flexJoint.maxDistance = distance + 0.25f;
             flexJoint.breakForce = Mathf.Infinity;
             flexJoint.breakTorque = Mathf.Infinity;
@@ -1780,7 +1780,7 @@ namespace ActiveStruts.Modules
             localFlexAnchor.transform.position = FlexOffsetOriginPosition;
             yield return new WaitForFixedUpdate();
             localFlexAnchorFixedJoint = localFlexAnchor.AddComponent<FixedJoint>();
-            localFlexAnchorFixedJoint.connectedBody = part.rigidbody;
+            localFlexAnchorFixedJoint.connectedBody = part.GetComponent<Rigidbody>();
             localFlexAnchorFixedJoint.breakForce = localFlexAnchorFixedJoint.breakTorque = Mathf.Infinity;
         }
 
@@ -1887,7 +1887,7 @@ namespace ActiveStruts.Modules
             {
                 Strut = part.FindModelTransform(StrutName);
                 ModelFeatures.Add(ModelFeaturesType.Strut, true);
-                DestroyImmediate(Strut.collider);
+                DestroyImmediate(Strut.GetComponent<Collider>());
             }
             else
             {
@@ -1905,7 +1905,7 @@ namespace ActiveStruts.Modules
                 Hooks = part.FindModelTransform(HooksName);
                 ModelFeatures.Add(ModelFeaturesType.Hooks, true);
                 featureOrientation.Add(ModelFeaturesType.Hooks, new OrientationInfo(HooksForward));
-                DestroyImmediate(Hooks.collider);
+                DestroyImmediate(Hooks.GetComponent<Collider>());
             }
             else
             {
@@ -1915,7 +1915,7 @@ namespace ActiveStruts.Modules
             {
                 LightsBright = part.FindModelTransform(LightsBrightName);
                 ModelFeatures.Add(ModelFeaturesType.LightsBright, true);
-                DestroyImmediate(LightsBright.collider);
+                DestroyImmediate(LightsBright.GetComponent<Collider>());
             }
             else
             {
@@ -1925,7 +1925,7 @@ namespace ActiveStruts.Modules
             {
                 LightsDull = part.FindModelTransform(LightsDullName);
                 ModelFeatures.Add(ModelFeaturesType.LightsDull, true);
-                DestroyImmediate(LightsDull.collider);
+                DestroyImmediate(LightsDull.GetComponent<Collider>());
             }
             else
             {
@@ -2213,7 +2213,7 @@ namespace ActiveStruts.Modules
             foreach (
                 var m in
                     new[] {simpleLights, simpleLightsSecondary}.Select(
-                        lightTransform => lightTransform.renderer.material))
+                    lightTransform => lightTransform.GetComponent<Renderer>().material))
             {
                 m.SetColor("_Emissive", col);
                 m.SetColor("_MainTex", col);
