@@ -4,6 +4,7 @@ using System.Linq;
 using ActiveStruts.Modules;
 using UnityEngine;
 using Object = UnityEngine.Object;
+using KSP.UI.Screens;
 
 namespace ActiveStruts.Util
 {
@@ -500,10 +501,12 @@ namespace ActiveStruts.Util
             }
             if (addExtraStage)
             {
-                var currMax = Staging.lastStage;
-                Staging.AddStageAt(++currMax);
+                StageManager stManager = KSP.UI.Screens.StageManager.Instance;
+
+                var currMax = StageManager.LastStage;
+                stManager.AddStageAt(++currMax);
             }
-            vessel.currentStage = Staging.lastStage;
+            vessel.currentStage = StageManager.LastStage;
             FlightGlobals.SetActiveVessel(currVessel);
         }
 
