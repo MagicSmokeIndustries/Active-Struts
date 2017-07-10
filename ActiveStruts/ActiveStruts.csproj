@@ -45,9 +45,6 @@
       <HintPath>..\..\KSP_LIB\UnityEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="KSPUtil">
-      <HintPath>..\..\KSP_LIB\KSPUtil.dll</HintPath>
-    </Reference>
     <Reference Include="UnityEngine.UI">
       <HintPath>..\..\KSP_LIB\UnityEngine.UI.dll</HintPath>
     </Reference>
